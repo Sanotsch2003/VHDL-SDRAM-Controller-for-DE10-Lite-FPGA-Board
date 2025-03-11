@@ -1,0 +1,137 @@
+{
+	"partitions" : [
+		{
+			"name" : "Top",
+			"pins" : [
+				{
+					"name" : "SDRAM_ADDR[0]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_ADDR[1]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_ADDR[2]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_ADDR[4]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_ADDR[5]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_ADDR[10]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_BYTE_MASK[0]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_BYTE_MASK[1]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_RAS",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_CAS",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_CLK",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_WRITE_EN",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[0]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[1]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[2]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[3]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[4]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[5]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[6]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[7]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[8]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[9]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[10]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[11]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[12]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[13]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[14]",
+					"strict" : false
+				},
+				{
+					"name" : "SDRAM_DATA[15]",
+					"strict" : false
+				},
+				{
+					"name" : "memClk",
+					"strict" : false
+				},
+				{
+					"name" : "reset",
+					"strict" : false
+				},
+				{
+					"name" : "enable",
+					"strict" : false
+				},
+				{
+					"name" : "sysClk",
+					"strict" : false
+				}
+			]
+		}
+	]
+}

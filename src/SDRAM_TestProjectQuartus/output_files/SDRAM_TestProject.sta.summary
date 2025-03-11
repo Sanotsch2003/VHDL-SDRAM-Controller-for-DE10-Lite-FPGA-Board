@@ -1,0 +1,77 @@
+------------------------------------------------------------
+Timing Analyzer Summary
+------------------------------------------------------------
+
+Type  : Slow 1200mV 85C Model Setup 'memClk'
+Slack : -4.178
+TNS   : -161.124
+
+Type  : Slow 1200mV 85C Model Setup 'sysClk'
+Slack : -2.828
+TNS   : -946.545
+
+Type  : Slow 1200mV 85C Model Hold 'sysClk'
+Slack : 0.325
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Hold 'memClk'
+Slack : 0.326
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Minimum Pulse Width 'sysClk'
+Slack : -3.000
+TNS   : -592.004
+
+Type  : Slow 1200mV 85C Model Minimum Pulse Width 'memClk'
+Slack : -3.000
+TNS   : -79.986
+
+Type  : Slow 1200mV 0C Model Setup 'memClk'
+Slack : -3.725
+TNS   : -141.278
+
+Type  : Slow 1200mV 0C Model Setup 'sysClk'
+Slack : -2.519
+TNS   : -817.872
+
+Type  : Slow 1200mV 0C Model Hold 'memClk'
+Slack : 0.295
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Hold 'sysClk'
+Slack : 0.296
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Minimum Pulse Width 'sysClk'
+Slack : -3.000
+TNS   : -592.004
+
+Type  : Slow 1200mV 0C Model Minimum Pulse Width 'memClk'
+Slack : -3.000
+TNS   : -79.986
+
+Type  : Fast 1200mV 0C Model Setup 'memClk'
+Slack : -1.485
+TNS   : -45.053
+
+Type  : Fast 1200mV 0C Model Setup 'sysClk'
+Slack : -1.396
+TNS   : -215.239
+
+Type  : Fast 1200mV 0C Model Hold 'memClk'
+Slack : 0.148
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Hold 'sysClk'
+Slack : 0.149
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Minimum Pulse Width 'sysClk'
+Slack : -3.000
+TNS   : -506.217
+
+Type  : Fast 1200mV 0C Model Minimum Pulse Width 'memClk'
+Slack : -3.000
+TNS   : -69.362
+
+------------------------------------------------------------

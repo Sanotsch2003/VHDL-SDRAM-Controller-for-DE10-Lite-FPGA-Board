@@ -1,0 +1,760 @@
+library IEEE;
+use IEEE.Std_logic_1164.all;
+use IEEE.Numeric_Std.all;
+
+--Ram clock period : Max 143 Mhz
+--CasLatency for this Controller : 3 cycles
+--max Burst Length : 512 32-Bit words
+--Addressing : One Address Per 16 bit word -> As the controller uses 32 bit words as in and outputs, given addresses should be multiples of 2. 
+--If you processor uses byte addressing, you will need to devide that address by 2 before passing it to the controller.
+
+entity SdramController is
+	 generic(
+			numConnectedDevices : integer := 1; --max: 8
+			
+			--unit: nanoseconds
+			memClkPeriod : integer := 7; 
+			sysClkPeriod : integer := 20;
+			
+			--unit: cycles
+			t_cac			: integer:=3;
+			t_rcd			: integer:=3;
+			t_rac			: integer:=6;
+			t_rc			: integer:=9;
+			t_ras			: integer:=6;
+			t_rp			: integer:=3;
+			t_rdd			: integer:=2;
+			t_ccd			: integer:=1;
+			t_dpl			: integer:=2;
+			t_dal			: integer:=5;
+			t_rbd			: integer:=3;
+			t_wbd			: integer:=0;
+			t_rql			: integer:=3;
+			t_wdl			: integer:=0;
+			t_mrd			: integer:=2
+			);
+    port (
+        --System Signals
+		  memClk 				: in std_logic;
+		  sysClk				: in std_logic;
+		  reset					: in std_logic;
+		  enable				: in std_logic;
+		  
+		  --SDRAM Signal
+		  SDRAM_ADDR			: out std_logic_vector(12 downto 0);
+		  SDRAM_DATA			: inout std_logic_vector(15 downto 0);
+		  SDRAM_BANK_ADDR		: out std_logic_vector(1 downto 0);
+		  SDRAM_BYTE_MASK		: out std_logic_vector(1 downto 0);
+		  SDRAM_RAS				: out std_logic;
+		  SDRAM_CAS				: out std_logic;
+		  SDRAM_CLK_EN			: out std_logic;
+		  SDRAM_CLK				: out std_logic;
+		  SDRAM_WRITE_EN		: out std_logic;
+		  SDRAM_CHIP_SEL		: out std_logic;
+		  
+		  --Controller Signals
+		  burstLength			: in std_logic_vector(numConnectedDevices*9-1 downto 0);
+		  readReq				: in std_logic_vector(numConnectedDevices-1 downto 0);
+		  writeReq				: in std_logic_vector(numConnectedDevices-1 downto 0);
+		  address				: in std_logic_vector(numConnectedDevices*25-1 downto 0);
+		  dataIn				: in std_logic_vector(numConnectedDevices*32-1 downto 0);
+		  dataOut				: out std_logic_vector(31 downto 0);
+		  byteMask				: in std_logic_vector(numConnectedDevices*4-1 downto 0);
+		  SDRAM_Ready           : out std_logic_vector(numConnectedDevices-1 downto 0);
+		  dataAvailable         : out std_logic_vector(numConnectedDevices-1 downto 0);
+		  
+		  memoryOverflowInterrupt:out std_logic;
+		  interruptReset        : in std_logic
+    );
+end SdramController;
+
+architecture Behavioral of SdramController is
+	
+	--State machine signals
+	type controllerStateType is (SDRAM_POWER_UP, SDRAM_INIT, SDRAM_IDLE, SDRAM_AUTO_REFRESH, SDRAM_ACTIVATE_ROW, SDRAM_READ, SDRAM_WRITE, SDRAM_RECOVER_FROM_INTERRUPT);
+	signal controllerState, controllerState_nxt : controllerStateType;
+	
+	type readBufferStateType is (READ_BUFFER_IDLE, READ_BUFFER_TRANSMITTING);
+	signal readBufferState, readBufferState_nxt : readBufferStateType;
+	
+	type writeBufferStateType is (WRITE_BUFFER_IDLE, WRITE_BUFFER_RECEIVING);
+	signal writeBufferState, writeBufferState_nxt : writeBufferStateType;
+	
+	
+	--Address signals
+	signal s_rowAddress 		     : std_logic_vector(12 downto 0);
+	signal s_columnAddress 	         : std_logic_vector(9 downto 0);
+	signal s_bankAddress		     : std_logic_vector(1 downto 0);	
+	
+	signal s_command                 : std_logic_vector(18 downto 0);
+	
+	--SDRAM COMMANDS:
+	constant COMMAND_DEVICE_DESELECT 	       : std_logic_vector(18 downto 0) := "1000000000000000000";
+	constant COMMAND_NO_OPERATION			   : std_logic_vector(18 downto 0) := "0111000000000000000";
+	constant COMMAND_BURST_STOP			       : std_logic_vector(18 downto 0) := "0110000000000000000";
+	constant COMMAND_READ					   : std_logic_vector(4 downto 0) := "01010";
+	constant COMMAND_READ_WITH_AP			   : std_logic_vector(4 downto 0) := "01011";
+	constant COMMAND_WRITE					   : std_logic_vector(4 downto 0) := "01000";
+	constant COMMAND_WRITE_WITH_AP		       : std_logic_vector(4 downto 0) := "01001";
+	constant COMMAND_BANK_ACTIVATE		       : std_logic_vector(3 downto 0) := "0011";
+	constant COMMAND_PRECHARGE_SEL_BANK        : std_logic_vector(4 downto 0) := "00100";
+	constant COMMAND_PRECHARGE_ALL_BANKS       : std_logic_vector(18 downto 0) := "0010100000000000000";
+	constant COMMAND_REFRESH				   : std_logic_vector(18 downto 0) := "0001000000000000000";
+	constant COMMAND_SET_MODE_REGISTER	       : std_logic_vector(8 downto 0) := "000000000";
+	
+	--MODE REGISTER constants
+	constant MODE_REGISTER_SINGLE_LOCATION_ACCESS  : std_logic_vector(9 downto 0) := "1000110000";
+	constant MODE_REGISTER_BURST_2                 : std_logic_vector(9 downto 0) := "0000110001";
+	constant MODE_REGISTER_BURST_4                 : std_logic_vector(9 downto 0) := "0000110010";
+	constant MODE_REGISTER_BURST_8                 : std_logic_vector(9 downto 0) := "0000110011";
+	constant MODE_REGISTER_BURST_FULL              : std_logic_vector(9 downto 0) := "0000110111";
+	
+	--Timing
+	
+	--Final Design
+	--constant POWER_ON_CYCLES : integer := (100_000 + memClkPeriod - 1) / memClkPeriod; --divide the time needed to power on the SDRAM by the SDRAM-Clk-Frequency and round up the result.
+    
+    --Testbench
+    constant POWER_ON_CYCLES : integer := (100 + memClkPeriod - 1) / memClkPeriod; --divide the time needed to power on the SDRAM by the SDRAM-Clk-Frequency and round up the result.
+    
+    constant ASYNC_RESET_CYCLES : integer := (sysClkPeriod + memClkPeriod - 1) / memClkPeriod + 1; --The amount of Cycles the memory clock needs to keep a reset signal high so the system clock will be able to reliably process it. 
+    
+    --max Addresses
+    constant MAX_COLUMN_ADDRESS : integer := 1023;
+    constant MAX_RAM_ADDRESS : integer := 33554431;
+	
+	--Count Signals
+	signal stateCycleCount: unsigned(16 downto 0);
+	signal stateCycleCountReset : std_logic;
+	
+	--Refresh Signals
+	signal refreshCount            : unsigned(31 downto 0);
+	constant refreshWindowCycles   : integer := 7_800 / memClkPeriod;
+	signal refreshPending          : boolean;
+	signal refreshDone             : std_logic;
+	
+	--Interrupt Signals
+	signal memoryOverflowInterruptReg, memoryOverflowInterruptReg_nxt : std_logic;
+	
+	
+	type std_logic_vector_array is array (natural range <>) of std_logic_vector(15 downto 0);
+	
+	
+	--Control Registers and signals for Writing
+	signal writeBuffer, writeBuffer_nxt                : std_logic_vector_array(127 downto 0);
+	signal writeAddressReg, writeAddressReg_nxt        : std_logic_vector(24 downto 0);
+	signal writeTurnReg, writeTurnReg_nxt              : unsigned(2 downto 0);
+	signal writeBurstLengthReg, writeBurstLengthReg_nxt: unsigned(8 downto 0);
+	signal writeByteMaskReg, writeByteMaskReg_nxt      : std_logic_vector(3 downto 0);
+	signal writeBufferEmpty, writeBufferEmpty_nxt      : boolean := True;
+	signal writeDeviceIndexReg, writeDeviceIndexReg_nxt: unsigned(2 downto 0);
+	signal writeBufferWriteCount                       : unsigned(8 downto 0);
+	signal writeBufferWriteCountReset                  : std_logic;
+	signal writeBufferEmptyReset                       : std_logic;
+	
+	--Control Registers for Reading
+	signal readTurnReg, readturnReg_nxt                : unsigned(2 downto 0);
+	signal readBuffer, readBuffer_nxt                  : std_logic_vector_array(127 downto 0);
+	signal readBufferEmpty, readBufferEmpty_nxt        : boolean;
+	signal readBufferEmptyReset                        : std_logic;
+	signal readBufferReadCount                         : unsigned(9 downto 0);
+	signal readBufferReadCountReset                    : std_logic;
+	signal readByteMaskReg, readByteMaskReg_nxt        : std_logic_vector(3 downto 0);
+	signal readBurstLengthReg, readBurstLengthReg_nxt  : unsigned(8 downto 0);    
+	signal readDeviceIndexReg, readDeviceIndexReg_nxt  : unsigned(2 downto 0);    
+	
+	--General control Registers for Writing AND Reading
+	signal addressReg, addressReg_nxt                  : std_logic_vector(24 downto 0);
+	signal burstLengthReg, burstLengthReg_nxt          : unsigned(9 downto 0);
+    signal bufferOffsetReg, bufferOffsetReg_nxt        : unsigned(9 downto 0);
+	signal byteMaskReg, byteMaskReg_nxt                : std_logic_vector(3 downto 0);
+	type memOperationType is (READ, WRITE);
+	signal memOperationReg, memOperationReg_nxt        : memOperationType;
+	signal burstOverflowReg, burstOverflowReg_nxt      : boolean;
+   
+begin
+    --SDRAM Clock assigment
+    SDRAM_CLK <= memClk;
+
+	--command assignments
+	SDRAM_CHIP_SEL 				<= s_command(18);
+	SDRAM_RAS					<= s_command(17);
+	SDRAM_CAS					<= s_command(16);
+	SDRAM_WRITE_EN				<= s_command(15);
+	SDRAM_ADDR(10) 				<= s_command(14);
+	SDRAM_BANK_ADDR				<= s_command(13 downto 12);
+	SDRAM_ADDR(12 downto 11)	<= s_command(11 downto 10);
+	SDRAM_ADDR(9 downto 0)		<= s_command(9 downto 0);
+	
+	--address assignments
+	s_bankAddress		<= addressReg(24 downto 23);
+	s_rowAddress 		<= addressReg(22 downto 10);
+	s_columnAddress 	<= addressReg(9 downto 0);
+	
+	--Interrupt assignments
+	memoryOverflowInterrupt <= memoryOverflowInterruptReg;
+
+	--Memory State machine
+	process(controllerState, stateCycleCount, addressReg, readBurstLengthReg, readByteMaskReg, readDeviceIndexReg, burstLengthReg, byteMaskReg, writeAddressReg, readTurnReg, refreshPending, burstOverflowReg, memoryOverflowInterruptReg, memOperationReg, writeBurstLengthReg, writeBufferEmpty, writeByteMaskReg, readReq, address, burstLength, byteMask, writeBuffer, writeDeviceIndexReg, bufferOffsetReg, readBufferEmpty)
+	variable deviceIndex : integer;
+	variable readTurn_nxt : integer;
+	
+	variable controllerBurstLength : integer; --Controller burst length is double of the given burst
+	variable burstEndAddress : integer;
+	variable columnAddress : integer;
+	variable burstOverflowStartingAddress : integer;
+	variable remainingBurstLength : integer;
+	 
+	begin
+		--Default Assignments
+		controllerState_nxt		          <= controllerState;
+		addressReg_nxt				      <= addressReg;
+		burstLengthReg_nxt                <= burstLengthReg;
+		byteMaskReg_nxt                   <= byteMaskReg;
+		readTurnReg_nxt                   <= readTurnReg;
+		memOperationReg_nxt               <= memOperationReg;
+		memoryOverflowInterruptReg_nxt    <= memoryOverflowInterruptReg;
+		burstOverflowReg_nxt              <= burstOverflowReg;
+		bufferOffsetReg_nxt               <= bufferOffsetReg;
+        readBurstLengthReg_nxt            <= readBurstLengthReg;
+        readByteMaskReg_nxt               <= readByteMaskReg;
+        readDeviceIndexReg_nxt            <= readDeviceIndexReg;
+		stateCycleCountReset 	          <= '0';
+		refreshDone       			      <= '0';
+		
+		
+		case controllerState is
+		
+		when SDRAM_POWER_UP =>
+			if to_integer(stateCycleCount) >= POWER_ON_CYCLES-1 then
+				stateCycleCountReset <= '1';
+				controllerState_nxt <= SDRAM_INIT;
+			end if;
+			
+		when SDRAM_INIT => 
+			if to_integer(stateCycleCount) >= (t_rp + t_rc * 8 + t_mrd)-1 then
+				stateCycleCountReset <= '1';
+				controllerState_nxt <= SDRAM_IDLE;
+			end if;
+			
+		when SDRAM_IDLE =>
+            
+            --Check if the last memory operation could not be finished due to burst overflow and a second burst op must be initiated.
+		    if burstOverflowReg = True then
+		          if memOperationReg = Write then
+		              controllerBurstLength := to_integer(writeBurstLengthReg)*2+1;
+		          else
+		              controllerBurstLength := to_integer(readBurstLengthReg)*2 + 1;
+		          end if;
+		          
+		          burstOverflowStartingAddress := to_integer(unsigned(addressReg)) + to_integer(burstLengthReg) + 1;
+                  burstEndAddress := to_integer(unsigned(addressReg)) + controllerBurstLength;
+                  remainingBurstLength := burstEndAddress - burstOverflowStartingAddress;
+                  if burstOverflowStartingAddress > MAX_RAM_ADDRESS then
+                      memoryOverflowInterruptReg_nxt <= '1';
+                      burstOverflowReg_nxt <= False;
+                      controllerState_nxt <= SDRAM_RECOVER_FROM_INTERRUPT;
+                      stateCycleCountReset <= '1';	
+
+                  else
+                      burstOverflowReg_nxt <= False;
+                      burstLengthReg_nxt          <= to_unsigned(remainingBurstLength, 10);
+                      addressReg_nxt			  <= std_logic_vector(to_unsigned(burstOverflowStartingAddress, 25));
+                      bufferOffsetReg_nxt         <= to_unsigned(to_integer(burstLengthReg) + 1, 10);
+                      
+                      --Advancing to next State
+                      controllerState_nxt <= SDRAM_ACTIVATE_ROW;
+                      stateCycleCountReset <= '1';		                  
+                  end if;
+		          
+		    --Check if Memory needs to be refreshed.
+		    elsif refreshPending = True then
+		          controllerState_nxt <= SDRAM_AUTO_REFRESH;
+		          refreshDone <= '1';
+		          stateCycleCountReset <= '1';
+		    
+		    --Check if A Write Operation Is needed. 
+		    elsif writeBufferEmpty = False then
+		          --Setting up Controll Registers
+		          --Check if a burst overflow will occur
+		          controllerBurstLength   := to_integer(writeBurstLengthReg)*2+1;
+		          columnAddress           := to_integer(unsigned(writeAddressReg(9 downto 0)));
+		          burstEndAddress         := columnAddress + controllerBurstLength;
+		          if burstEndAddress > MAX_COLUMN_ADDRESS then
+		              burstOverflowReg_nxt <= True;
+		              controllerBurstLength := MAX_COLUMN_ADDRESS - columnAddress;
+		          else
+		              burstOverflowReg_nxt <= False;
+		          end if;
+		          
+		          burstLengthReg_nxt          <= to_unsigned(controllerBurstLength, 10);
+		          memOperationReg_nxt         <= WRITE;
+		          addressReg_nxt			  <= writeAddressReg;
+		          byteMaskReg_nxt             <= writeByteMaskReg;
+		          bufferOffsetReg_nxt         <= (others => '0');
+		          
+		          
+		          --Advancing to next State
+		          controllerState_nxt <= SDRAM_ACTIVATE_ROW;
+		          stateCycleCountReset <= '1';
+		          
+		    --Check if a device want to Read from memory and determine, which device is allowed to based on a round robin mechanism
+		    elsif readBufferEmpty = True then  
+		        for i in 0 to numConnectedDevices-1 loop
+		            deviceIndex := to_integer(readTurnReg) + i;
+		            if deviceIndex >= numConnectedDevices then
+		                  deviceIndex := to_integer(readTurnReg) + i - numConnectedDevices;
+		            end if;
+		            
+		            if readReq(deviceIndex) = '1' then
+		                  --Setting up read controll registers
+		                  readBurstLengthReg_nxt      <= unsigned(burstLength(deviceIndex*9+8 downto deviceIndex*9));
+		                  readByteMaskReg_nxt         <= byteMask(deviceIndex*4+3 downto deviceIndex*4);
+		                  readDeviceIndexReg_nxt      <= to_unsigned(deviceIndex, 3);
+		                  
+                          --Check if a burst overflow will occur
+                          controllerBurstLength := to_integer(unsigned(burstLength(deviceIndex*6+5 downto deviceIndex*6)))*2+1;
+                          columnAddress         := to_integer(unsigned(address(deviceIndex*25+9 downto deviceIndex*25)));
+                          burstEndAddress       := columnAddress + controllerBurstLength;
+                          if burstEndAddress > MAX_COLUMN_ADDRESS then
+                              burstOverflowReg_nxt <= True;
+                              controllerBurstLength := MAX_COLUMN_ADDRESS - columnAddress;
+                          else
+                              burstOverflowReg_nxt <= False;
+                          end if;
+		              
+                    	--Setting up general controll registers
+                    	burstLengthReg_nxt        <= to_unsigned(controllerBurstLength, 10);
+                    	memOperationReg_nxt       <= READ;
+                        addressReg_nxt			  <= address(deviceIndex*25+24 downto deviceIndex*25);
+                        byteMaskReg_nxt           <= byteMask(deviceIndex*4+3 downto deviceIndex*4);
+                        bufferOffsetReg_nxt       <= (others => '0');
+                         
+                        readTurn_nxt := deviceIndex + 1;
+                        if readTurn_nxt >= numConnectedDevices then
+                            readTurn_nxt := 0;
+                        end if;
+                        readTurnReg_nxt           <= to_unsigned(readTurn_nxt, 3);
+                        
+                        --Advancing to next State
+                        controllerState_nxt <= SDRAM_ACTIVATE_ROW;
+                        stateCycleCountReset <= '1';  
+                        exit;
+		            end if;  
+		        end loop;
+		    end if;
+		
+		when SDRAM_AUTO_REFRESH =>
+		      if to_integer(stateCycleCount) = t_rp + 2*t_rc - 1 then
+				    stateCycleCountReset <= '1';
+				    controllerState_nxt <= SDRAM_IDLE;	      
+		      end if;
+		      
+		when SDRAM_ACTIVATE_ROW => 
+		      if to_integer(stateCycleCount) = t_rcd - 1 then
+				    stateCycleCountReset <= '1';
+				    if memOperationReg = WRITE then
+                        controllerState_nxt <= SDRAM_WRITE;	   
+				    else
+				        controllerState_nxt <= SDRAM_READ;
+				    end if;   
+		      end if;
+		
+		when SDRAM_WRITE =>
+		     if to_integer(stateCycleCount) >= to_integer(burstLengthReg) + t_dpl + t_rp - 1 then
+		     	    stateCycleCountReset <= '1';
+				    controllerState_nxt <= SDRAM_IDLE;	
+		     end if;
+		
+		when SDRAM_READ => 
+		    if to_integer(stateCycleCount) >= to_integer(burstLengthReg) + t_cac + t_rp - 1 then
+                stateCycleCountReset <= '1';
+                controllerState_nxt <= SDRAM_IDLE;	
+		    end if;
+		
+		when SDRAM_RECOVER_FROM_INTERRUPT =>
+		    --Give Controller Time to resync after an interrupt has occured.
+		  	if to_integer(stateCycleCount) >= ASYNC_RESET_CYCLES - 1 then
+                stateCycleCountReset <= '1';
+                controllerState_nxt <= SDRAM_IDLE;	
+		    end if;
+			
+		
+		when others =>
+			controllerState_nxt <= SDRAM_INIT;
+			
+		end case;
+	
+	end process;
+	
+	--Memory signal assignments
+	process(controllerState, stateCycleCount, writeBuffer, s_rowAddress, s_bankAddress, s_columnAddress, burstLengthReg, byteMaskReg, bufferOffsetReg, burstOverflowReg, SDRAM_DATA, readBuffer)
+	begin
+		--default assignments
+		s_command <= COMMAND_NO_OPERATION;
+		SDRAM_CLK_EN <= '1';
+		SDRAM_DATA <= (others => 'Z');
+		SDRAM_BYTE_MASK <= "11"; 
+		writeBufferEmptyReset <= '0';
+		readBufferEmptyReset <= '0';
+		readBuffer_nxt <= readBuffer;
+		
+		
+		case controllerState is
+		
+		when SDRAM_POWER_UP =>
+				null;
+		
+		when SDRAM_INIT =>
+			if to_integer(stateCycleCount) < t_rp then
+				s_command <= COMMAND_PRECHARGE_ALL_BANKS;
+			elsif (to_integer(stateCycleCount) = t_rp + t_rc * 0) or (to_integer(stateCycleCount) = t_rp + t_rc * 1) or (to_integer(stateCycleCount) = t_rp + t_rc * 2) or (to_integer(stateCycleCount) = t_rp + t_rc * 3) or (to_integer(stateCycleCount) = t_rp + t_rc * 4) or (to_integer(stateCycleCount) = t_rp + t_rc * 5) or (to_integer(stateCycleCount) = t_rp + t_rc * 6) or (to_integer(stateCycleCount) = t_rp + t_rc * 7) then
+				s_command <= COMMAND_REFRESH;
+			elsif (to_integer(stateCycleCount) = t_rp + t_rc * 8) then
+				s_command <= COMMAND_SET_MODE_REGISTER & MODE_REGISTER_BURST_FULL;
+			end if;
+			
+	    when SDRAM_IDLE => 
+	       null;
+	       
+	    when SDRAM_AUTO_REFRESH => 
+	       if to_integer(stateCycleCount) = 0 then
+	           s_command <= COMMAND_PRECHARGE_ALL_BANKS;
+	       elsif to_integer(stateCycleCount) = t_rp or to_integer(stateCycleCount) = t_rp + t_rc then
+	           s_command <= COMMAND_REFRESH;
+	       end if;
+	       
+	    when SDRAM_ACTIVATE_ROW => 
+	       if to_integer(stateCycleCount) = 0 then
+	           s_command(18 downto 15) <= COMMAND_BANK_ACTIVATE;
+	           s_command(14) <= s_rowAddress(10);
+	           s_command(13 downto 12) <= s_bankAddress;
+	           s_command(11 downto 10) <= s_rowAddress(12 downto 11);
+	           s_command(9 downto 0) <= s_rowAddress(9 downto 0);
+	       end if;
+	       
+	    when SDRAM_WRITE =>
+	       --Place Data on Data Lines, set Byte Mask signals, and Terminate the write at the right time
+	       if to_integer(stateCycleCount) <= to_integer(burstLengthReg) then
+	           SDRAM_DATA <= writeBuffer(to_integer(stateCycleCount) + to_integer(bufferOffsetReg));
+	           if stateCycleCount(0) = '0' then --upper two bytes
+	               SDRAM_BYTE_MASK <= not byteMaskReg(3 downto 2);
+	           else --lower two bytes
+	               SDRAM_BYTE_MASK <= not byteMaskReg(1 downto 0);
+	           end if;
+	       end if;
+	       
+	       if to_integer(stateCycleCount) = 0 then
+	       	   --Send write command on first write cycle
+	       	   s_command(18 downto 14) <= COMMAND_WRITE;
+	           s_command(13 downto 12) <= s_bankAddress;
+	           s_command(11 downto 10) <= "00";
+	           s_command(9 downto 0) <= s_columnAddress; 
+	       elsif to_integer(stateCycleCount) = to_integer(burstLengthReg) + 1 then
+	           --terminate Burst
+	           s_command <= COMMAND_BURST_STOP;  
+	       elsif to_integer(stateCycleCount) = to_integer(burstLengthReg) + 1 + t_dpl then
+	           --PrechargeBanks
+	           s_command <= COMMAND_PRECHARGE_ALL_BANKS;
+	       end if;
+	       
+	       --Reset the WriteBufferEmpty register so more data can be read
+	       if (to_integer(stateCycleCount) >= to_integer(burstLengthReg) + t_dpl + t_rp - ASYNC_RESET_CYCLES) and (burstOverflowReg = False) then
+	           writeBufferEmptyReset <= '1';
+	       end if;
+	       
+	    
+	    when SDRAM_READ =>
+	       --Set byte mask to receive all bytes
+	       SDRAM_BYTE_MASK <= "00";
+	       
+	       if to_integer(stateCycleCount) = 0 then
+	       	   --Send read command on first read cycle
+	       	   s_command(18 downto 14) <= COMMAND_READ;
+	           s_command(13 downto 12) <= s_bankAddress;
+	           s_command(11 downto 10) <= "00";
+	           s_command(9 downto 0) <= s_columnAddress; 
+	       elsif to_integer(stateCycleCount) = to_integer(burstLengthReg) + 1 then
+	           --terminate Burst
+	           s_command <= COMMAND_BURST_STOP;  
+	       elsif to_integer(stateCycleCount) = t_cac + to_integer(burstLengthReg) + 1 then
+	           s_command <= COMMAND_PRECHARGE_ALL_BANKS;
+	       end if;
+	       
+	       --Receive Data and latch them into read buffer
+	       if to_integer(stateCycleCount) >= t_cac and to_integer(stateCycleCount) <= t_cac + to_integer(burstLengthReg) then
+	           readBuffer_nxt(to_integer(stateCycleCount) - t_cac + to_integer(bufferOffsetReg)) <= SDRAM_DATA;  
+	       end if;
+	       
+	       --Give the other state machine the signal to start providing the received Data at the output
+	       if (to_integer(stateCycleCount) >=  to_integer(burstLengthReg) + t_cac + t_rp - ASYNC_RESET_CYCLES)  and (burstOverflowReg = False) then
+	           readBufferEmptyReset <= '1';
+	       end if;
+	    
+	    when SDRAM_RECOVER_FROM_INTERRUPT =>
+	       writeBufferEmptyReset <= '1';
+		
+		when others => 
+			null;
+			
+		end case;
+	
+	end process;
+	
+	
+	--Memory Counters
+	process(memClk, reset)
+	begin
+		if reset = '1' then
+			stateCycleCount  <= (others => '0');
+			refreshCount     <= (others => '0');
+			refreshPending   <= True;
+		elsif falling_edge(memClk) then
+			--State Cycle Counter
+			if stateCycleCountReset = '1' then
+				stateCycleCount <= (others => '0');
+			else
+				stateCycleCount <= stateCycleCount + 1;
+			end if;
+			
+			--Refresh Counter
+			if to_integer(refreshCount) = refreshWindowCycles-1 then
+				refreshCount <= (others => '0');
+				refreshPending <= True;
+			else
+				refreshCount <= refreshCount + 1;
+			end if;	
+			
+			if refreshDone = '1' then
+			     refreshPending <= False;
+			end if;
+			
+		end if;
+	end process;
+	
+	
+	--System counters
+	process(sysClk, reset)
+	begin
+	   if reset = '1' then
+	       writeBufferWriteCount <= (others => '0');
+	       readBufferReadCount <= (others => '0');
+	   
+	   elsif rising_edge(sysClk) then 
+	       if enable = '1' then
+	           if writeBufferWriteCountReset = '1' then
+	               writeBufferWriteCount <= (others => '0');
+	           else
+	               writeBufferWriteCount <= writeBufferWriteCount + 1;
+	           end if;
+	           
+	           if readBufferReadCountReset = '1' then
+	               readBufferReadCount <= (others => '0');
+	           else
+	               readBufferReadCount <= readBufferReadCount + 1;
+	           end if;
+	       end if;
+	   
+	   end if;
+	end process;
+	
+	
+	--System State Machines
+	process(readBufferState, writeBufferState, writeBuffer, writeBufferEmpty, writeTurnReg, writeReq, writeBufferWriteCount, dataIn, writeBuffer, writeAddressReg, writeBurstLengthReg, writeByteMaskReg, writeDeviceIndexReg, address, burstLength, byteMask, readDeviceIndexReg, readBufferEmpty, readBuffer, readBufferReadCount, readByteMaskReg, readBurstLengthReg)
+	variable deviceIndex : integer;
+	variable nextTurn : integer;
+	begin
+	   --default assignments
+	   --write registers and signals
+	   writeBufferState_nxt        <= writeBufferState;
+	   writeBuffer_nxt             <= writeBuffer;
+	   writeBufferEmpty_nxt        <= writeBufferEmpty;
+	   writeTurnReg_nxt            <= writeTurnReg;
+	   writeAddressReg_nxt         <= writeAddressReg;
+	   writeBurstLengthReg_nxt     <= writeBurstLengthReg;
+	   writeByteMaskReg_nxt        <= writeByteMaskReg;
+	   writeDeviceIndexReg_nxt     <= writeDeviceIndexReg;
+	   writeBufferWriteCountReset  <= '0';
+	   SDRAM_Ready                 <= (others => '0');
+	   
+	   --read registers and signals
+	   readBufferState_nxt         <= readBufferState;
+	   readBufferEmpty_nxt         <= readBufferEmpty;
+	   readBufferReadCountReset    <= '0';
+	   dataAvailable               <= (others => '0');
+	   dataOut                     <= (others => '0');
+	   
+	   case writeBufferState is 
+	       when WRITE_BUFFER_IDLE =>
+	           if writeBufferEmpty = true then
+	               --Calculate, which device is allowed to write to the buffer based on a round robin mechanism
+	                for i in 0 to numConnectedDevices-1 loop
+                        deviceIndex := to_integer(writeTurnReg) + i;
+                        if deviceIndex >= numConnectedDevices then
+                              deviceIndex := to_integer(writeTurnReg) + i - numConnectedDevices;
+                        end if; 
+                        
+                        if writeReq(deviceIndex) = '1' then
+                            --Load registers to perform write operation
+                            nextTurn := deviceIndex + 1;
+                            if nextTurn >= numConnectedDevices then
+                                nextTurn := 0;
+                            end if;
+                            writeTurnReg_nxt        <= to_unsigned(nextTurn, 3);
+                            writeAddressReg_nxt     <= address(deviceIndex*25+24 downto deviceIndex*25);
+                            writeBurstLengthReg_nxt <= unsigned(burstLength(deviceIndex*9+8 downto deviceIndex*9));
+                            writeByteMaskReg_nxt    <= byteMask(deviceIndex*4+3 downto deviceIndex*4);
+                            writeDeviceIndexReg_nxt <= to_unsigned(deviceIndex, 3);
+                            
+                            --Tell device to start sending data
+                            SDRAM_Ready(deviceIndex) <= '1';
+                            
+                            --Go to next state and start counter
+                            writeBufferWriteCountReset <= '1';
+                            writeBufferState_nxt <= WRITE_BUFFER_RECEIVING;
+                            exit;
+                        end if;
+                        
+		            end loop;
+	           end if;
+	       
+	       when WRITE_BUFFER_RECEIVING =>
+	           --Receiving Data
+	           deviceIndex := to_integer(writeDeviceIndexReg);
+	           writeBuffer_nxt(to_integer(writeBufferWriteCount)*2)    <= dataIn(deviceIndex*32+31 downto deviceIndex*32+16);
+	           writeBuffer_nxt(to_integer(writeBufferWriteCount)*2+1)  <= dataIn(deviceIndex*32+15 downto deviceIndex*32);
+	           
+	           if to_integer(writeBufferWriteCount) >= to_integer(writeBurstLengthReg) then 
+	               writeBufferState_nxt <= WRITE_BUFFER_IDLE;
+	               --Tell the other state machine to start writing the data to memory. Room for improvement here.
+                   writeBufferEmpty_nxt <= False;
+	           end if;
+	         
+	       when others =>
+	   end case;
+	   
+	   case readBufferState is 
+	       when READ_BUFFER_IDLE => 
+	           if readBufferEmpty = False then
+	               readBufferState_nxt <= READ_BUFFER_TRANSMITTING;
+	               readBufferReadCountReset <= '1';
+	               dataAvailable(to_integer(readDeviceIndexReg)) <= '1';
+	           end if;
+	       
+	       when READ_BUFFER_TRANSMITTING => 
+	           dataOut <= readBuffer(to_integer(readBufferReadCount)*2) & readBuffer(to_integer(readBufferReadCount)*2 + 1);
+	           --Applying Byte Mask
+	           for i in 0 to 3 loop
+	               if readByteMaskReg(i) = '0' then
+	                   dataOut(8*i+7 downto 8*i) <= (others => '0');
+	               end if;
+	           end loop;
+	           
+	           if to_integer(readBufferReadCount) >= to_integer(readBurstLengthReg) then 
+	               readBufferState_nxt <= READ_BUFFER_IDLE;
+	               --Tell the other state machine that a new read can begin.
+                   readBufferEmpty_nxt <= True;
+	           end if;
+
+	       when others =>
+	       
+	   end case;
+	
+	end process;
+	
+	
+	--Update registers that are managed by the system clock
+	process(sysClk, reset)
+	begin
+	   if reset = '1' then
+	       readBufferState              <= READ_BUFFER_IDLE;
+	       writeBufferState             <= WRITE_BUFFER_IDLE;
+	       writeBuffer                  <= (others => (others => '0'));
+	       writeAddressReg              <= (others => '0');
+           writeTurnReg                 <= (others => '0');
+           writeBurstLengthReg          <= (others => '0');
+           writeByteMaskReg             <= (others => '0');
+           writeDeviceIndexReg          <= (others => '0');
+           writeBufferEmpty             <= True;
+           readBufferEmpty              <= False;
+	   
+	   elsif rising_edge(sysClk) then
+            if enable = '1' then
+                readBufferState     <= readBufferState_nxt;
+                writeBufferState    <= writeBufferState_nxt;
+                writeBuffer         <= writeBuffer_nxt;
+                writeAddressReg     <= writeAddressReg_nxt;
+                writeTurnReg        <= writeTurnReg_nxt;
+                writeBurstLengthReg <= writeBurstLengthReg_nxt;
+                writeByteMaskReg    <= writeByteMaskReg_nxt;
+                writeDeviceIndexReg <= writeDeviceIndexReg_nxt;
+
+                
+                if writeBufferEmptyReset = '1' then
+                    writeBufferEmpty <= True;
+                else 
+                    writeBufferEmpty    <= writeBufferEmpty_nxt;
+                end if;
+                
+                if readBufferEmptyReset = '1' then
+                    readBufferEmpty <= False;
+                else
+                    readBufferEmpty <= readBufferEmpty_nxt; 
+                end if;
+                
+             
+            end if;
+	   end if;
+	end process;
+	
+	
+	
+	--Update registers that are managed by the memory clock
+	process(memClk, reset)
+	begin
+	if reset = '1' then
+		controllerState 				<= SDRAM_POWER_UP;
+		addressReg						<= (others => '0');
+		burstLengthReg                  <= (others => '0');
+		byteMaskReg                     <= (others => '0');
+		readTurnReg                     <= (others => '0');
+		bufferOffsetReg                 <= (others => '0');
+		readBuffer                      <= (others => (others => '0'));
+        readBurstLengthReg              <= (others => '0');
+        readByteMaskReg                 <= (others => '0');
+        readDeviceIndexReg              <= (others => '0');
+		memoryOverflowInterruptReg      <= '0';
+		memOperationReg                 <= WRITE;
+		burstOverflowReg                <= False;
+		
+	elsif falling_edge(memClk) then
+	   if enable = '1' then
+	        --General Registers
+            controllerState 				<= controllerState_nxt;
+            addressReg						<= addressReg_nxt;
+            burstLengthReg                  <= burstLengthReg_nxt;
+            byteMaskReg                     <= byteMaskReg_nxt;
+            memOperationReg                 <= memOperationReg_nxt;
+            burstOverflowReg                <= burstOverflowReg_nxt;
+            bufferOffsetReg                 <= bufferOffsetReg_nxt;
+            
+            --Read Registers
+            readTurnReg                     <= readTurnReg_nxt;
+            readBuffer                      <= readBuffer_nxt;
+            readBurstLengthReg              <= readBurstLengthReg_nxt;
+            readByteMaskReg                 <= readByteMaskReg_nxt;
+            readDeviceIndexReg              <= readDeviceIndexReg_nxt;
+
+            
+            --Resetting Interrupt
+            if interruptReset = '1' then
+                memoryOverflowInterruptReg <= '0';
+            else
+                memoryOverflowInterruptReg <= memoryOverflowInterruptReg_nxt;
+            end if;
+		end if;
+	end if;
+	
+	end process;
+
+end Behavioral;
