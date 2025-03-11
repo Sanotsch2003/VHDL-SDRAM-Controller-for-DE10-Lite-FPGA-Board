@@ -44,11 +44,39 @@
 					"strict" : false
 				},
 				{
-					"name" : "SDRAM_CLK",
+					"name" : "SDRAM_WRITE_EN",
 					"strict" : false
 				},
 				{
-					"name" : "SDRAM_WRITE_EN",
+					"name" : "LEDs[0]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[1]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[2]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[3]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[4]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[5]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[6]",
+					"strict" : false
+				},
+				{
+					"name" : "LEDs[7]",
 					"strict" : false
 				},
 				{
@@ -116,10 +144,6 @@
 					"strict" : false
 				},
 				{
-					"name" : "memClk",
-					"strict" : false
-				},
-				{
 					"name" : "reset",
 					"strict" : false
 				},
@@ -128,7 +152,7 @@
 					"strict" : false
 				},
 				{
-					"name" : "sysClk",
+					"name" : "clk",
 					"strict" : false
 				}
 			]

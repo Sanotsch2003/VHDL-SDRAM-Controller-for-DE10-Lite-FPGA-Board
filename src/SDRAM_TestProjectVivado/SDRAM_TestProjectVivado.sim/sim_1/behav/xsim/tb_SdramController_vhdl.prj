@@ -1,0 +1,9 @@
+# compile vhdl design source files
+vhdl xil_defaultlib  \
+"../../../../../VHDL Files/SDRAM_Controller_DE10-Lite.vhd" \
+"../../../../../VHDL Files/Test Files/top.vhd" \
+"../../../../../VHDL Files/Test Files/pllClockGeneratorAMD.vhd" \
+"../../../../SDRAM_TestProjectVivado.srcs/sim_1/new/SDRAM_ControllerTB.vhd" \
+
+# Do not sort compile order
+nosort

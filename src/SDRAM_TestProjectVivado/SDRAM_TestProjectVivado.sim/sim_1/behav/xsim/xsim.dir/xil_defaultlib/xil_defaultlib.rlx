@@ -1,0 +1,8 @@
+0.7
+2020.2
+Nov  8 2024
+22:36:55
+/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.srcs/sim_1/new/SDRAM_ControllerTB.vhd,1741721850,vhdl,,,,tb_sdramcontroller,,,,,,,,
+/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd,1741721599,vhdl,,,,sdramcontroller,,,,,,,,
+/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/pllClockGeneratorAMD.vhd,1741343615,vhdl,,,,pllclockgenerator,,,,,,,,
+/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd,1741722397,vhdl,,,,top,,,,,,,,

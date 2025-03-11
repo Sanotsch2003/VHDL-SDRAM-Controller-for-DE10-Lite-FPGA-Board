@@ -1,234 +1,293 @@
-library IEEE;
-use IEEE.Std_logic_1164.all;
-use IEEE.Numeric_Std.all;
+LIBRARY IEEE;
+USE IEEE.Std_logic_1164.ALL;
+USE IEEE.Numeric_Std.ALL;
 
-entity top is
-    generic (
-        numConnectedDevices : integer := 1
+ENTITY top IS
+    GENERIC (
+        numConnectedDevices : INTEGER := 1
     );
-    port (
+    PORT (
         -- System Signals
-        memClk   : in std_logic;
-        sysClk   : in std_logic;
-        reset    : in std_logic;
-        enable   : in std_logic;
+        clk    : IN STD_LOGIC;
+        reset  : IN STD_LOGIC;
+        enable : IN STD_LOGIC;
 
         -- SDRAM Interface
-        SDRAM_ADDR      : out std_logic_vector(12 downto 0);
-        SDRAM_DATA      : inout std_logic_vector(15 downto 0);
-        SDRAM_BANK_ADDR : out std_logic_vector(1 downto 0);
-        SDRAM_BYTE_MASK : out std_logic_vector(1 downto 0);
-        SDRAM_RAS       : out std_logic;
-        SDRAM_CAS       : out std_logic;
-        SDRAM_CLK_EN    : out std_logic;
-        SDRAM_CLK       : out std_logic;
-        SDRAM_WRITE_EN  : out std_logic;
-        SDRAM_CHIP_SEL  : out std_logic
-    );
-end top;
+        SDRAM_ADDR      : OUT STD_LOGIC_VECTOR(12 DOWNTO 0);
+        SDRAM_DATA      : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+        SDRAM_BANK_ADDR : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+        SDRAM_BYTE_MASK : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+        SDRAM_RAS       : OUT STD_LOGIC;
+        SDRAM_CAS       : OUT STD_LOGIC;
+        SDRAM_CLK_EN    : OUT STD_LOGIC;
+        SDRAM_CLK       : OUT STD_LOGIC;
+        SDRAM_WRITE_EN  : OUT STD_LOGIC;
+        SDRAM_CHIP_SEL  : OUT STD_LOGIC;
 
-architecture Behavioral of top is
-    component SdramController
-        generic (
-			numConnectedDevices : integer := 1; --max: 8
-			
-			--unit: nanoseconds
-			memClkPeriod : integer := 7; 
-			sysClkPeriod : integer := 20;
-			
-			--unit: cycles
-			t_cac			: integer:=3;
-			t_rcd			: integer:=3;
-			t_rac			: integer:=6;
-			t_rc			: integer:=9;
-			t_ras			: integer:=6;
-			t_rp			: integer:=3;
-			t_rdd			: integer:=2;
-			t_ccd			: integer:=1;
-			t_dpl			: integer:=2;
-			t_dal			: integer:=5;
-			t_rbd			: integer:=3;
-			t_wbd			: integer:=0;
-			t_rql			: integer:=3;
-			t_wdl			: integer:=0;
-			t_mrd			: integer:=2
-			);
-        port (
-            --System Signals
-              memClk 				: in std_logic;
-              sysClk				: in std_logic;
-              reset					: in std_logic;
-              enable				: in std_logic;
-              
-              --SDRAM Signal
-              SDRAM_ADDR			: out std_logic_vector(12 downto 0);
-              SDRAM_DATA			: inout std_logic_vector(15 downto 0);
-              SDRAM_BANK_ADDR		: out std_logic_vector(1 downto 0);
-              SDRAM_BYTE_MASK		: out std_logic_vector(1 downto 0);
-              SDRAM_RAS				: out std_logic;
-              SDRAM_CAS				: out std_logic;
-              SDRAM_CLK_EN			: out std_logic;
-              SDRAM_CLK				: out std_logic;
-              SDRAM_WRITE_EN		: out std_logic;
-              SDRAM_CHIP_SEL		: out std_logic;
-              
-              --Controller Signals
-              burstLength			: in std_logic_vector(numConnectedDevices*9-1 downto 0);
-              readReq				: in std_logic_vector(numConnectedDevices-1 downto 0);
-              writeReq				: in std_logic_vector(numConnectedDevices-1 downto 0);
-              address				: in std_logic_vector(numConnectedDevices*25-1 downto 0);
-              dataIn				: in std_logic_vector(numConnectedDevices*32-1 downto 0);
-              dataOut				: out std_logic_vector(31 downto 0);
-              byteMask				: in std_logic_vector(numConnectedDevices*4-1 downto 0);
-              SDRAM_Ready           : out std_logic_vector(numConnectedDevices-1 downto 0);
-              dataAvailable         : out std_logic_vector(numConnectedDevices-1 downto 0);
-		  
-              memoryOverflowInterrupt:out std_logic;
-              interruptReset        : in std_logic
+        --Status LEDs
+        LEDs : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+    );
+END top;
+
+ARCHITECTURE Behavioral OF top IS
+    COMPONENT SdramController
+        GENERIC (
+            numConnectedDevices : INTEGER := 1; --max: 8
+
+            --unit: nanoseconds
+            memClkPeriod : INTEGER := 7;
+            sysClkPeriod : INTEGER := 20;
+
+            --unit: cycles
+            t_cac : INTEGER := 3;
+            t_rcd : INTEGER := 3;
+            t_rac : INTEGER := 6;
+            t_rc  : INTEGER := 9;
+            t_ras : INTEGER := 6;
+            t_rp  : INTEGER := 3;
+            t_rdd : INTEGER := 2;
+            t_ccd : INTEGER := 1;
+            t_dpl : INTEGER := 2;
+            t_dal : INTEGER := 5;
+            t_rbd : INTEGER := 3;
+            t_wbd : INTEGER := 0;
+            t_rql : INTEGER := 3;
+            t_wdl : INTEGER := 0;
+            t_mrd : INTEGER := 2
         );
-    end component;
-    
-    
+        PORT (
+            --System Signals
+            memClk : IN STD_LOGIC;
+            sysClk : IN STD_LOGIC;
+            reset  : IN STD_LOGIC;
+            enable : IN STD_LOGIC;
+
+            --SDRAM Signal
+            SDRAM_ADDR      : OUT STD_LOGIC_VECTOR(12 DOWNTO 0);
+            SDRAM_DATA      : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            SDRAM_BANK_ADDR : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+            SDRAM_BYTE_MASK : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+            SDRAM_RAS       : OUT STD_LOGIC;
+            SDRAM_CAS       : OUT STD_LOGIC;
+            SDRAM_CLK_EN    : OUT STD_LOGIC;
+            SDRAM_CLK       : OUT STD_LOGIC;
+            SDRAM_WRITE_EN  : OUT STD_LOGIC;
+            SDRAM_CHIP_SEL  : OUT STD_LOGIC;
+
+            --Controller Signals
+            burstLength   : IN STD_LOGIC_VECTOR(numConnectedDevices * 9 - 1 DOWNTO 0);
+            readReq       : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+            writeReq      : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+            address       : IN STD_LOGIC_VECTOR(numConnectedDevices * 25 - 1 DOWNTO 0);
+            dataIn        : IN STD_LOGIC_VECTOR(numConnectedDevices * 32 - 1 DOWNTO 0);
+            dataOut       : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+            byteMask      : IN STD_LOGIC_VECTOR(numConnectedDevices * 4 - 1 DOWNTO 0);
+            SDRAM_Ready   : OUT STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+            dataAvailable : OUT STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+
+            memoryOverflowInterrupt : OUT STD_LOGIC;
+            interruptReset          : IN STD_LOGIC
+        );
+    END COMPONENT;
+
+    COMPONENT pllClockGenerator IS
+        GENERIC (
+            CLKFBOUT_MULT_F  : real := 10.0; -- Feedback multiplier
+            CLKOUT0_DIVIDE_F : real := 7.0;  -- Divide factor
+            CLKIN1_PERIOD    : real := 10.0  -- Input clock period (100 MHz)
+        );
+        PORT (
+            clk_in  : IN STD_LOGIC;  -- 100 MHz input clock
+            reset   : IN STD_LOGIC;  -- Reset signal
+            clk_out : OUT STD_LOGIC; -- 50 MHz output clock
+            locked  : OUT STD_LOGIC  -- Locked signal
+        );
+    END COMPONENT;
     --Signals 
-    signal burstLength              : std_logic_vector(numConnectedDevices*9-1 downto 0);
-    signal readReq                  : std_logic_vector(numConnectedDevices-1 downto 0);
-    signal writeReq                 : std_logic_vector(numConnectedDevices-1 downto 0);
-    signal address                  : std_logic_vector(numConnectedDevices*25-1 downto 0);
-    signal dataToRAM                : std_logic_vector(numConnectedDevices*32-1 downto 0);
-    signal dataFromRAM              : std_logic_vector(31 downto 0);
-    signal byteMask                 : std_logic_vector(numConnectedDevices*4-1 downto 0);
-    signal SDRAM_Ready              : std_logic_vector(numConnectedDevices-1 downto 0);
-    signal dataAvailable            : std_logic_vector(numConnectedDevices-1 downto 0);
-    signal memoryOverflowInterrupt  : std_logic;
-    signal interruptReset           : std_logic;
-    
-    signal transmitCount : unsigned(5 downto 0);
-    signal transmitCountReset : std_logic;
-    
-    type stateType is (IDLE, START_TRANSMISSION, TRANSMIT, HALT, START_RECEIVING, RECEIVE);
-    signal state, state_nxt : stateType;
-    
-    constant c_BURST_LENGTH : integer := 5;
-    constant c_STARTING_ADDRESS : integer := 1;
-    
-    
+    SIGNAL burstLength             : STD_LOGIC_VECTOR(numConnectedDevices * 9 - 1 DOWNTO 0);
+    SIGNAL readReq                 : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+    SIGNAL writeReq                : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+    SIGNAL address                 : STD_LOGIC_VECTOR(numConnectedDevices * 25 - 1 DOWNTO 0);
+    SIGNAL dataToRAM               : STD_LOGIC_VECTOR(numConnectedDevices * 32 - 1 DOWNTO 0);
+    SIGNAL dataFromRAM             : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL byteMask                : STD_LOGIC_VECTOR(numConnectedDevices * 4 - 1 DOWNTO 0);
+    SIGNAL SDRAM_Ready             : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+    SIGNAL dataAvailable           : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
+    SIGNAL memoryOverflowInterrupt : STD_LOGIC;
+    SIGNAL interruptReset          : STD_LOGIC;
+
+    SIGNAL transmitCount      : unsigned(9 DOWNTO 0);
+    SIGNAL transmitCountReset : STD_LOGIC;
+
+    SIGNAL receiveCount      : unsigned(9 DOWNTO 0);
+    SIGNAL receiveCountReset : STD_LOGIC;
+
+    SIGNAL s_enable : STD_LOGIC;
+    SIGNAL s_reset  : STD_LOGIC;
+    SIGNAL locked   : STD_LOGIC;
+    SIGNAL memClk   : STD_LOGIC;
+
+    TYPE stateType IS (IDLE, START_TRANSMISSION, TRANSMIT, HALT, START_RECEIVING, RECEIVE);
+    SIGNAL state, state_nxt : stateType;
+
+    CONSTANT c_BURST_LENGTH     : INTEGER := 3;
+    CONSTANT c_STARTING_ADDRESS : INTEGER := 0;
+
+    TYPE std_logic_vector_array IS ARRAY (NATURAL RANGE <>) OF STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL receivedData, receivedData_nxt : std_logic_vector_array(3 DOWNTO 0);
+
+    SIGNAL LED_Reg, LED_Reg_nxt : STD_LOGIC_VECTOR(7 DOWNTO 0);
     --type std_logic_vector_array is array (natural range <>) of std_logic_vector(31 downto 0);
     --signal dataToTransmit,  : std_logic_vector_array(9 downto 0);
 
-begin
+BEGIN
+    LEDs     <= LED_REG;
+    s_enable <= enable AND locked;
+    s_reset  <= NOT reset;
+
     sdram_controller : SdramController
-        generic map (
-            numConnectedDevices => numConnectedDevices
-        )
-        port map (
-            memClk => memClk,
-            sysClk => sysClk,
-            reset => reset,
-            enable => enable,
-            SDRAM_ADDR => SDRAM_ADDR,
-            SDRAM_BANK_ADDR => SDRAM_BANK_ADDR,
-            SDRAM_BYTE_MASK => SDRAM_BYTE_MASK,
-            SDRAM_RAS => SDRAM_RAS,
-            SDRAM_CAS => SDRAM_CAS,
-            SDRAM_CLK_EN => SDRAM_CLK_EN,
-            SDRAM_CLK => SDRAM_CLK,
-            SDRAM_WRITE_EN => SDRAM_WRITE_EN,
-            SDRAM_CHIP_SEL => SDRAM_CHIP_SEL,
-            SDRAM_DATA => SDRAM_DATA,
-            burstLength => burstLength,
-            readReq => readReq,
-            writeReq => writeReq,
-            address => address,
-            dataIn => dataToRAM,
-            dataOut => dataFromRAM,
-            byteMask => byteMask,
-            SDRAM_Ready => SDRAM_Ready,
-            dataAvailable => dataAvailable,
-            memoryOverflowInterrupt => memoryOverflowInterrupt,
-            interruptReset => interruptReset
-        );
-        
-     stateMachine : process(state, SDRAM_Ready, transmitCount, dataAvailable)
-     begin
+    GENERIC MAP(
+        numConnectedDevices => numConnectedDevices
+    )
+    PORT MAP(
+        memClk                  => memClk,
+        sysClk                  => clk,
+        reset                   => s_reset,
+        enable                  => s_enable,
+        SDRAM_ADDR              => SDRAM_ADDR,
+        SDRAM_BANK_ADDR         => SDRAM_BANK_ADDR,
+        SDRAM_BYTE_MASK         => SDRAM_BYTE_MASK,
+        SDRAM_RAS               => SDRAM_RAS,
+        SDRAM_CAS               => SDRAM_CAS,
+        SDRAM_CLK_EN            => SDRAM_CLK_EN,
+        SDRAM_CLK               => SDRAM_CLK,
+        SDRAM_WRITE_EN          => SDRAM_WRITE_EN,
+        SDRAM_CHIP_SEL          => SDRAM_CHIP_SEL,
+        SDRAM_DATA              => SDRAM_DATA,
+        burstLength             => burstLength,
+        readReq                 => readReq,
+        writeReq                => writeReq,
+        address                 => address,
+        dataIn                  => dataToRAM,
+        dataOut                 => dataFromRAM,
+        byteMask                => byteMask,
+        SDRAM_Ready             => SDRAM_Ready,
+        dataAvailable           => dataAvailable,
+        memoryOverflowInterrupt => memoryOverflowInterrupt,
+        interruptReset          => interruptReset
+    );
+
+    clock_generator : pllClockGenerator
+    PORT MAP(
+        clk_in  => clk,
+        reset   => s_reset,
+        clk_out => memClk,
+        locked  => locked
+    );
+
+    stateMachine : PROCESS (state, SDRAM_Ready, transmitCount, dataAvailable, dataFromRAM, receiveCount, receivedData, LED_Reg)
+    BEGIN
         --default assignments
-        state_nxt <= state;
+        state_nxt          <= state;
+        receivedData_nxt   <= receivedData;
+        LED_Reg_nxt        <= LED_Reg;
         transmitCountReset <= '0';
-        writeReq        <= "0";
-        readReq         <= "0";
-        burstLength     <= (others => '0');
-        address         <= (others => '0');
-        byteMask        <= (others => '0');
-        dataToRAM       <= (others => '0');
-        
-        case state is
-            when IDLE =>
+        receiveCountReset  <= '0';
+        writeReq           <= "0";
+        readReq            <= "0";
+        burstLength        <= (OTHERS => '0');
+        address            <= (OTHERS => '0');
+        byteMask           <= (OTHERS => '0');
+        dataToRAM          <= (OTHERS => '0');
+
+        CASE state IS
+            WHEN IDLE =>
                 state_nxt <= START_TRANSMISSION;
-            
-            when START_TRANSMISSION =>
-                writeReq        <= "1";
-                burstLength     <= std_logic_vector(to_unsigned(c_BURST_LENGTH, 9));
-                address         <= std_logic_vector(to_unsigned(c_STARTING_ADDRESS, 25));
-                byteMask        <= "1111";
-                if SDRAM_Ready = "1" then
-                    state_nxt <= TRANSMIT;
+
+            WHEN START_TRANSMISSION =>
+                writeReq    <= "1";
+                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_BURST_LENGTH, 9));
+                address     <= STD_LOGIC_VECTOR(to_unsigned(c_STARTING_ADDRESS, 25));
+                byteMask    <= "1111";
+                IF SDRAM_Ready = "1" THEN
+                    state_nxt          <= TRANSMIT;
                     transmitCountReset <= '1';
-                end if;
-            
-            when TRANSMIT =>
-                if transmitCount >= c_BURST_LENGTH then
+                END IF;
+
+            WHEN TRANSMIT =>
+                IF transmitCount >= c_BURST_LENGTH THEN
                     state_nxt <= START_RECEIVING;
-                end if;
-                dataToRam <= std_logic_vector(to_unsigned(to_integer(transmitCount) + 3, 32));
-            
-            when START_RECEIVING =>
-                readReq         <= "1";
-                burstLength     <= std_logic_vector(to_unsigned(c_BURST_LENGTH, 9));
-                address         <= std_logic_vector(to_unsigned(c_STARTING_ADDRESS, 25));
-                byteMask        <= "1111";
-                
-                if dataAvailable = "1" then
-                    state_nxt <= RECEIVE;
-                    transmitCountReset <= '1';
-                end if;
-                
-            when RECEIVE =>
-                null;
-            
-            when HALT =>
-                null;
-            
-            when others =>
-                null;
-        end case;
-     
-     end process;
-     
-     
-     counter : process(sysClk, reset)
-     begin
-        if reset = '1' then
-            transmitCount <= (others => '0');
-        elsif rising_edge(sysClk) then
-            transmitCount <= transmitCount + 1;
-            if transmitCountReset = '1' then
-                transmitCount <= (others => '0');
-            end if;
-        end if;
-     
-     end process;
-        
-     process(sysClk, reset)
-     begin
-        if reset = '1' then
-            state <= IDLE;
+                END IF;
+                dataToRam <= STD_LOGIC_VECTOR(to_unsigned(to_integer(transmitCount) + 3, 32));
+                --dataToRam <= "00000000000000000000000011110000";
+
+            WHEN START_RECEIVING =>
+                readReq     <= "1";
+                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_BURST_LENGTH, 9));
+                address     <= STD_LOGIC_VECTOR(to_unsigned(c_STARTING_ADDRESS, 25));
+                byteMask    <= "1111";
+
+                IF dataAvailable = "1" THEN
+                    state_nxt         <= RECEIVE;
+                    receiveCountReset <= '1';
+                END IF;
+
+            WHEN RECEIVE =>
+                receivedData_nxt(to_integer(receiveCount)) <= dataFromRAM;
+                IF to_integer(receiveCount) = c_BURST_LENGTH THEN
+                    state_nxt <= HALT;
+                END IF;
+
+            WHEN HALT =>
+                LED_REG_nxt <= receivedData(2)(7 DOWNTO 0);
+                --FOR i IN 0 TO 3 LOOP
+                --IF receivedData(i) /= x"00000000" THEN
+                --LED_Reg_nxt <= x"55";
+                --END IF;
+                --END LOOP;
+
+            WHEN OTHERS =>
+                NULL;
+        END CASE;
+
+    END PROCESS;
+    counter : PROCESS (clk, s_reset)
+    BEGIN
+        IF s_reset = '1' THEN
+            transmitCount <= (OTHERS => '0');
+            receiveCount  <= (OTHERS => '0');
+        ELSIF rising_edge(clk) THEN
+            IF s_enable = '1' THEN
+                transmitCount <= transmitCount + 1;
+                receiveCount  <= receiveCount + 1;
+                IF transmitCountReset = '1' THEN
+                    transmitCount <= (OTHERS => '0');
+                END IF;
+                IF receiveCountReset = '1' THEN
+                    receiveCount <= (OTHERS => '0');
+                END IF;
+            END IF;
+        END IF;
+
+    END PROCESS;
+
+    PROCESS (clk, s_reset)
+    BEGIN
+        IF s_reset = '1' THEN
+            state          <= IDLE;
             interruptReset <= '0';
-            
-        elsif rising_edge(sysClk) then
-            state <= state_nxt;
-            if memoryOverflowInterrupt = '1' then
-                interruptReset <= '1';
-            end if;
-        
-        end if;
-     end process;
-end Behavioral;
+            receivedData   <= (OTHERS => (OTHERS => '0'));
+            LED_Reg        <= (OTHERS => '0');
+
+        ELSIF rising_edge(clk) THEN
+            IF s_enable = '1' THEN
+                state        <= state_nxt;
+                receivedData <= receivedData_nxt;
+                LED_Reg      <= LED_Reg_nxt;
+                IF memoryOverflowInterrupt = '1' THEN
+                    interruptReset <= '1';
+                END IF;
+            END IF;
+        END IF;
+    END PROCESS;
+END Behavioral;

@@ -1,16 +1,16 @@
-Analysis & Synthesis Status : Successful - Tue Mar 11 18:26:50 2025
+Analysis & Synthesis Status : Successful - Tue Mar 11 21:41:06 2025
 Quartus Prime Version : 23.1std.1 Build 993 05/14/2024 SC Lite Edition
 Revision Name : SDRAM_TestProject
 Top-level Entity Name : top
 Family : MAX 10
-Total logic elements : 1,065
-    Total combinational functions : 620
-    Dedicated logic registers : 545
-Total registers : 545
-Total pins : 43
+Total logic elements : 1,587
+    Total combinational functions : 848
+    Dedicated logic registers : 863
+Total registers : 863
+Total pins : 50
 Total virtual pins : 0
 Total memory bits : 0
 Embedded Multiplier 9-bit elements : 0
-Total PLLs : 0
+Total PLLs : 1
 UFM blocks : 0
 ADC blocks : 0

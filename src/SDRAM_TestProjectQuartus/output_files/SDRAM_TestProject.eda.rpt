@@ -1,5 +1,5 @@
 EDA Netlist Writer report for SDRAM_TestProject
-Tue Mar 11 18:27:11 2025
+Tue Mar 11 21:41:21 2025
 Quartus Prime Version 23.1std.1 Build 993 05/14/2024 SC Lite Edition
 
 
@@ -37,7 +37,7 @@ https://fpgasoftware.intel.com/eula.
 +-------------------------------------------------------------------+
 ; EDA Netlist Writer Summary                                        ;
 +---------------------------+---------------------------------------+
-; EDA Netlist Writer Status ; Successful - Tue Mar 11 18:27:11 2025 ;
+; EDA Netlist Writer Status ; Successful - Tue Mar 11 21:41:21 2025 ;
 ; Revision Name             ; SDRAM_TestProject                     ;
 ; Top-level Entity Name     ; top                                   ;
 ; Family                    ; MAX 10                                ;
@@ -81,14 +81,13 @@ https://fpgasoftware.intel.com/eula.
 Info: *******************************************************************
 Info: Running Quartus Prime EDA Netlist Writer
     Info: Version 23.1std.1 Build 993 05/14/2024 SC Lite Edition
-    Info: Processing started: Tue Mar 11 18:27:11 2025
+    Info: Processing started: Tue Mar 11 21:41:21 2025
 Info: Command: quartus_eda --read_settings_files=off --write_settings_files=off SDRAM_TestProject -c SDRAM_TestProject
-Info (125069): Default assignment values were changed in the current version of the Quartus Prime software -- changes to default assignments values are contained in file /home/jonas/intelFPGA_lite/23.1std/quartus/linux64/assignment_defaults.qdf
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (204019): Generated file SDRAM_TestProject.vho in folder "/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectQuartus/simulation/questa/" for EDA simulation tool
 Info: Quartus Prime EDA Netlist Writer was successful. 0 errors, 1 warning
-    Info: Peak virtual memory: 584 megabytes
-    Info: Processing ended: Tue Mar 11 18:27:11 2025
+    Info: Peak virtual memory: 587 megabytes
+    Info: Processing ended: Tue Mar 11 21:41:21 2025
     Info: Elapsed time: 00:00:00
     Info: Total CPU time (on all processors): 00:00:00
 

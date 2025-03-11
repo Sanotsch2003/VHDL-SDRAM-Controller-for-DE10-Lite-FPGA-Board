@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_SdramController_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="tb_SdramController" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="1,262.330 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,420.867 ns"></ZoomEndTime>
+      <Cursor1Time time="1,700.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="276"></NameColumnWidth>
+      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="21" />
+   <wvobject type="logic" fp_name="/tb_SdramController/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_SdramController/SDRAM_CLK">
+      <obj_property name="ElementShortName">SDRAM_CLK</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_CLK</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_SdramController/UUT/sdram_controller/controllerState">
+      <obj_property name="ElementShortName">controllerState</obj_property>
+      <obj_property name="ObjectShortName">controllerState</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_SdramController/SDRAM_RAS">
+      <obj_property name="ElementShortName">SDRAM_RAS</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_RAS</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_SdramController/SDRAM_CAS">
+      <obj_property name="ElementShortName">SDRAM_CAS</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_CAS</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_SdramController/SDRAM_WRITE_EN">
+      <obj_property name="ElementShortName">SDRAM_WRITE_EN</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_WRITE_EN</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_SdramController/SDRAM_CHIP_SEL">
+      <obj_property name="ElementShortName">SDRAM_CHIP_SEL</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_CHIP_SEL</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/SDRAM_ADDR">
+      <obj_property name="ElementShortName">SDRAM_ADDR[12:0]</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_ADDR[12:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/SDRAM_DATA">
+      <obj_property name="ElementShortName">SDRAM_DATA[15:0]</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_DATA[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/SDRAM_BANK_ADDR">
+      <obj_property name="ElementShortName">SDRAM_BANK_ADDR[1:0]</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_BANK_ADDR[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/SDRAM_BYTE_MASK">
+      <obj_property name="ElementShortName">SDRAM_BYTE_MASK[1:0]</obj_property>
+      <obj_property name="ObjectShortName">SDRAM_BYTE_MASK[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_SdramController/stop_the_clock">
+      <obj_property name="ElementShortName">stop_the_clock</obj_property>
+      <obj_property name="ObjectShortName">stop_the_clock</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_SdramController/clkPeriod">
+      <obj_property name="ElementShortName">clkPeriod</obj_property>
+      <obj_property name="ObjectShortName">clkPeriod</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[7]">
+      <obj_property name="ElementShortName">[7][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[7][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[6]">
+      <obj_property name="ElementShortName">[6][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[6][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[5]">
+      <obj_property name="ElementShortName">[5][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[5][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[4]">
+      <obj_property name="ElementShortName">[4][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[4][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[3]">
+      <obj_property name="ElementShortName">[3][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[3][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[2]">
+      <obj_property name="ElementShortName">[2][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[2][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[1]">
+      <obj_property name="ElementShortName">[1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[1][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_SdramController/UUT/sdram_controller/writeBuffer[0]">
+      <obj_property name="ElementShortName">[0][15:0]</obj_property>
+      <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+   </wvobject>
+</wave_config>
