@@ -1,7 +1,4 @@
-Running: xsim.dir/tb_SdramController_behav/xsimk -simmode gui -wdb tb_SdramController_behav.wdb -simrunnum 0 -socket 53841
+Running: xsim.dir/tb_SdramController_behav/xsimk -simmode gui -wdb tb_SdramController_behav.wdb -simrunnum 0 -socket 55545
 Design successfully loaded
-Design Loading Memory Usage: 178116 KB (Peak: 178116 KB)
-Design Loading CPU Usage: 650 ms
-Simulation completed
-Simulation Memory Usage: 268052 KB (Peak: 317384 KB)
-Simulation CPU Usage: 670 ms
+Design Loading Memory Usage: 178196 KB (Peak: 178196 KB)
+Design Loading CPU Usage: 730 ms

@@ -85,8 +85,10 @@ begin
     wait for 5 ns;
     reset <= '0';
     wait for 5 ns;
+    reset <= '1';
+    wait for 5 ns;
     
-    wait for 100000000ns;
+    wait for 900000000ns;
  
 
     stop_the_clock <= true;

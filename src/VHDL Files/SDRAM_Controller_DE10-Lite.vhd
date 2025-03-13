@@ -5,7 +5,7 @@ USE IEEE.Numeric_Std.ALL;
 --Ram clock period : Max 143 Mhz
 --CasLatency for this Controller : 3 cycles
 --max Burst Length : 512 32-Bit words
---Addressing : One Address Per 16 bit word -> As the controller uses 32 bit words as in and outputs, given addresses should be multiples of 2. 
+--Addressing : One Address Per 32 bit word
 --If you processor uses byte addressing, you will need to divide the address by 2 before passing it to the controller.
 
 ENTITY SdramController IS
@@ -56,7 +56,7 @@ ENTITY SdramController IS
 		burstLength   : IN STD_LOGIC_VECTOR(numConnectedDevices * 9 - 1 DOWNTO 0);
 		readReq       : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
 		writeReq      : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
-		address       : IN STD_LOGIC_VECTOR(numConnectedDevices * 25 - 1 DOWNTO 0);
+		address       : IN STD_LOGIC_VECTOR(numConnectedDevices * 24 - 1 DOWNTO 0);
 		dataIn        : IN STD_LOGIC_VECTOR(numConnectedDevices * 32 - 1 DOWNTO 0);
 		dataOut       : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
 		byteMask      : IN STD_LOGIC_VECTOR(numConnectedDevices * 4 - 1 DOWNTO 0);
@@ -69,6 +69,34 @@ ENTITY SdramController IS
 END SdramController;
 
 ARCHITECTURE Behavioral OF SdramController IS
+
+	COMPONENT writeBuffer IS
+		PORT (
+			writeClk : IN STD_LOGIC;
+			readClk  : IN STD_LOGIC;
+
+			dataIn       : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+			writeAddress : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
+			writeEnable  : IN STD_LOGIC;
+
+			dataOut     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+			readAddress : IN STD_LOGIC_VECTOR(9 DOWNTO 0)
+		);
+	END COMPONENT;
+
+	COMPONENT creadBuffer IS
+		PORT (
+			writeClk : IN STD_LOGIC;
+			readClk  : IN STD_LOGIC;
+
+			dataIn       : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+			writeAddress : IN STD_LOGIC_VECTOR(8 DOWNTO 0);
+			writeEnable  : IN STD_LOGIC;
+
+			dataOut     : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+			readAddress : IN STD_LOGIC_VECTOR(8 DOWNTO 0)
+		);
+	END COMPONENT;
 
 	--State machine signals
 	TYPE controllerStateType IS (SDRAM_POWER_UP, SDRAM_INIT, SDRAM_IDLE, SDRAM_AUTO_REFRESH, SDRAM_ACTIVATE_ROW, SDRAM_READ, SDRAM_WRITE, SDRAM_RECOVER_FROM_INTERRUPT);
@@ -113,7 +141,7 @@ ARCHITECTURE Behavioral OF SdramController IS
 	CONSTANT POWER_ON_CYCLES : INTEGER := (100_000 + memClkPeriod - 1) / memClkPeriod; --divide the time needed to power on the SDRAM by the SDRAM-Clk-Frequency and round up the result.
 
 	--Testbench
-	--CONSTANT POWER_ON_CYCLES    : INTEGER := (100 + memClkPeriod - 1) / memClkPeriod;              --divide the time needed to power on the SDRAM by the SDRAM-Clk-Frequency and round up the result.
+	--CONSTANT POWER_ON_CYCLES : INTEGER := (100 + memClkPeriod - 1) / memClkPeriod; --divide the time needed to power on the SDRAM by the SDRAM-Clk-Frequency and round up the result.
 
 	CONSTANT ASYNC_RESET_CYCLES : INTEGER := (sysClkPeriod + memClkPeriod - 1) / memClkPeriod + 1; --The amount of Cycles the memory clock needs to keep a reset signal high so the system clock will be able to reliably process it. 
 
@@ -135,7 +163,7 @@ ARCHITECTURE Behavioral OF SdramController IS
 	SIGNAL memoryOverflowInterruptReg, memoryOverflowInterruptReg_nxt : STD_LOGIC;
 	TYPE std_logic_vector_array IS ARRAY (NATURAL RANGE <>) OF STD_LOGIC_VECTOR(15 DOWNTO 0);
 	--Control Registers and signals for Writing
-	SIGNAL writeBuffer, writeBuffer_nxt                 : std_logic_vector_array(127 DOWNTO 0);
+	--SIGNAL writeBuffer, writeBuffer_nxt                 : std_logic_vector_array(1024 DOWNTO 0);
 	SIGNAL writeAddressReg, writeAddressReg_nxt         : STD_LOGIC_VECTOR(24 DOWNTO 0);
 	SIGNAL writeTurnReg, writeTurnReg_nxt               : unsigned(2 DOWNTO 0);
 	SIGNAL writeBurstLengthReg, writeBurstLengthReg_nxt : unsigned(8 DOWNTO 0);
@@ -145,17 +173,29 @@ ARCHITECTURE Behavioral OF SdramController IS
 	SIGNAL writeBufferWriteCount                        : unsigned(8 DOWNTO 0);
 	SIGNAL writeBufferWriteCountReset                   : STD_LOGIC;
 	SIGNAL writeBufferEmptyReset                        : STD_LOGIC;
+	SIGNAL writeBufferEmptyResetShiftReg                : STD_LOGIC_VECTOR(1 DOWNTO 0);
+	SIGNAL writeBufferDataIn                            : STD_LOGIC_VECTOR(31 DOWNTO 0);
+	SIGNAL writeBufferWriteAddress                      : STD_LOGIC_VECTOR(8 DOWNTO 0);
+	SIGNAL writeBufferWriteEnable                       : STD_LOGIC;
+	SIGNAL writeBufferDataOut                           : STD_LOGIC_VECTOR(15 DOWNTO 0);
+	SIGNAL writeBufferReadAddress                       : STD_LOGIC_VECTOR(9 DOWNTO 0);
 
 	--Control Registers for Reading
 	SIGNAL readTurnReg, readturnReg_nxt               : unsigned(2 DOWNTO 0);
-	SIGNAL readBuffer, readBuffer_nxt                 : std_logic_vector_array(127 DOWNTO 0);
 	SIGNAL readBufferEmpty, readBufferEmpty_nxt       : BOOLEAN;
 	SIGNAL readBufferEmptyReset                       : STD_LOGIC;
-	SIGNAL readBufferReadCount                        : unsigned(9 DOWNTO 0);
+	SIGNAL readBufferEmptyResetShiftReg               : STD_LOGIC_VECTOR(1 DOWNTO 0);
+	SIGNAL readBufferReadCount                        : unsigned(8 DOWNTO 0);
 	SIGNAL readBufferReadCountReset                   : STD_LOGIC;
 	SIGNAL readByteMaskReg, readByteMaskReg_nxt       : STD_LOGIC_VECTOR(3 DOWNTO 0);
 	SIGNAL readBurstLengthReg, readBurstLengthReg_nxt : unsigned(8 DOWNTO 0);
 	SIGNAL readDeviceIndexReg, readDeviceIndexReg_nxt : unsigned(2 DOWNTO 0);
+	SIGNAL readBufferDataIn                           : STD_LOGIC_VECTOR(31 DOWNTO 0);
+	SIGNAL readBufferWriteAddress                     : STD_LOGIC_VECTOR(8 DOWNTO 0);
+	SIGNAL readBufferWriteEnable                      : STD_LOGIC;
+	SIGNAL readBufferDataOut                          : STD_LOGIC_VECTOR(31 DOWNTO 0);
+	SIGNAL readBufferReadAddress                      : STD_LOGIC_VECTOR(8 DOWNTO 0);
+	SIGNAL readTmpReg, readTmpReg_nxt                 : STD_LOGIC_VECTOR(15 DOWNTO 0);
 
 	--General control Registers for Writing AND Reading
 	SIGNAL addressReg, addressReg_nxt           : STD_LOGIC_VECTOR(24 DOWNTO 0);
@@ -167,6 +207,30 @@ ARCHITECTURE Behavioral OF SdramController IS
 	SIGNAL burstOverflowReg, burstOverflowReg_nxt : BOOLEAN;
 
 BEGIN
+	--write buffer
+	writeBufferInstance : writeBuffer
+	PORT MAP(
+		writeClk     => sysClk,
+		readClk      => memClk,
+		dataIn       => writeBufferDataIn,
+		writeAddress => writeBufferWriteAddress,
+		writeEnable  => writeBufferWriteEnable,
+		dataOut      => writeBufferDataOut,
+		readAddress  => writeBufferReadAddress
+	);
+
+	--read buffer
+	readBufferInstance : creadBuffer
+	PORT MAP(
+		writeClk     => memClk,
+		readClk      => sysClk,
+		dataIn       => readBufferDataIn,
+		writeAddress => readBufferWriteAddress,
+		writeEnable  => readBufferWriteEnable,
+		dataOut      => readBufferDataOut,
+		readAddress  => readBufferReadAddress
+	);
+
 	--SDRAM Clock assigment
 	SDRAM_CLK <= memClk;
 
@@ -189,7 +253,7 @@ BEGIN
 	memoryOverflowInterrupt <= memoryOverflowInterruptReg;
 
 	--Memory State machine
-	PROCESS (controllerState, stateCycleCount, addressReg, readBurstLengthReg, readByteMaskReg, readDeviceIndexReg, burstLengthReg, byteMaskReg, writeAddressReg, readTurnReg, refreshPending, burstOverflowReg, memoryOverflowInterruptReg, memOperationReg, writeBurstLengthReg, writeBufferEmpty, writeByteMaskReg, readReq, address, burstLength, byteMask, writeBuffer, writeDeviceIndexReg, bufferOffsetReg, readBufferEmpty)
+	PROCESS (controllerState, stateCycleCount, addressReg, readBurstLengthReg, readByteMaskReg, readDeviceIndexReg, burstLengthReg, byteMaskReg, writeAddressReg, readTurnReg, refreshPending, burstOverflowReg, memoryOverflowInterruptReg, memOperationReg, writeBurstLengthReg, writeBufferEmpty, writeByteMaskReg, readReq, address, burstLength, byteMask, writeDeviceIndexReg, bufferOffsetReg, readBufferEmpty)
 		VARIABLE deviceIndex  : INTEGER;
 		VARIABLE readTurn_nxt : INTEGER;
 
@@ -316,7 +380,7 @@ BEGIN
 							--Setting up general controll registers
 							burstLengthReg_nxt  <= to_unsigned(controllerBurstLength, 10);
 							memOperationReg_nxt <= READ;
-							addressReg_nxt      <= address(deviceIndex * 25 + 24 DOWNTO deviceIndex * 25);
+							addressReg_nxt      <= address(deviceIndex * 24 + 23 DOWNTO deviceIndex * 24) & '0'; --Multiply by 2.
 							byteMaskReg_nxt     <= byteMask(deviceIndex * 4 + 3 DOWNTO deviceIndex * 4);
 							bufferOffsetReg_nxt <= (OTHERS => '0');
 
@@ -376,16 +440,22 @@ BEGIN
 	END PROCESS;
 
 	--Memory signal assignments
-	PROCESS (controllerState, stateCycleCount, writeBuffer, s_rowAddress, s_bankAddress, s_columnAddress, burstLengthReg, byteMaskReg, bufferOffsetReg, burstOverflowReg, SDRAM_DATA, readBuffer)
+	PROCESS (controllerState, stateCycleCount, s_rowAddress, s_bankAddress, s_columnAddress, burstLengthReg, byteMaskReg, bufferOffsetReg, burstOverflowReg, SDRAM_DATA, writeBufferDataOut, readTmpReg)
+		VARIABLE readBufferPointer : STD_LOGIC_VECTOR(8 DOWNTO 0);
 	BEGIN
 		--default assignments
-		s_command             <= COMMAND_NO_OPERATION;
-		SDRAM_CLK_EN          <= '1';
-		SDRAM_DATA            <= (OTHERS => 'Z');
-		SDRAM_BYTE_MASK       <= "11";
-		writeBufferEmptyReset <= '0';
-		readBufferEmptyReset  <= '0';
-		readBuffer_nxt        <= readBuffer;
+		s_command              <= COMMAND_NO_OPERATION;
+		readTmpReg_nxt         <= readTmpReg;
+		SDRAM_CLK_EN           <= '1';
+		SDRAM_DATA             <= (OTHERS => 'Z');
+		SDRAM_BYTE_MASK        <= "11";
+		writeBufferEmptyReset  <= '0';
+		writeBufferReadAddress <= (OTHERS => '0');
+		readBufferEmptyReset   <= '0';
+		readBufferDataIn       <= (OTHERS => '0');
+		readBufferWriteAddress <= (OTHERS => '0');
+		readBufferWriteEnable  <= '0';
+
 		CASE controllerState IS
 
 			WHEN SDRAM_POWER_UP =>
@@ -418,16 +488,20 @@ BEGIN
 					s_command(11 DOWNTO 10) <= s_rowAddress(12 DOWNTO 11);
 					s_command(9 DOWNTO 0)   <= s_rowAddress(9 DOWNTO 0);
 				END IF;
-
 			WHEN SDRAM_WRITE =>
+				--Set write Buffer Address
+				writeBufferReadAddress <= STD_LOGIC_VECTOR(to_unsigned(to_integer(bufferOffsetReg) + to_integer(stateCycleCount) + 1, 10));
 				--Place Data on Data Lines, set Byte Mask signals, and Terminate the write at the right time
 				IF to_integer(stateCycleCount) <= to_integer(burstLengthReg) THEN
-					SDRAM_DATA                     <= writeBuffer(to_integer(stateCycleCount) + to_integer(bufferOffsetReg));
+					--Set Write Buffer Read Signals
+					SDRAM_DATA <= writeBufferDataOut;
 					IF stateCycleCount(0) = '0' THEN --upper two bytes
 						SDRAM_BYTE_MASK <= NOT byteMaskReg(3 DOWNTO 2);
 					ELSE --lower two bytes
 						SDRAM_BYTE_MASK <= NOT byteMaskReg(1 DOWNTO 0);
 					END IF;
+				ELSE
+					SDRAM_BYTE_MASK <= NOT byteMaskReg(1 DOWNTO 0);
 				END IF;
 
 				IF to_integer(stateCycleCount) = 0 THEN
@@ -448,6 +522,7 @@ BEGIN
 				IF (to_integer(stateCycleCount) >= to_integer(burstLengthReg) + t_dpl + t_rp - ASYNC_RESET_CYCLES) AND (burstOverflowReg = False) THEN
 					writeBufferEmptyReset <= '1';
 				END IF;
+
 			WHEN SDRAM_READ =>
 				--Set byte mask to receive all bytes
 				SDRAM_BYTE_MASK <= "00";
@@ -465,9 +540,17 @@ BEGIN
 					s_command <= COMMAND_PRECHARGE_ALL_BANKS;
 				END IF;
 
-				--Receive Data and latch them into read buffer
-				IF to_integer(stateCycleCount) >= t_cac AND to_integer(stateCycleCount)           <= t_cac + to_integer(burstLengthReg) THEN
-					readBuffer_nxt(to_integer(stateCycleCount) - t_cac + to_integer(bufferOffsetReg)) <= SDRAM_DATA;
+				readBufferPointer := STD_LOGIC_VECTOR(to_unsigned(to_integer(stateCycleCount) - t_cac + to_integer(bufferOffsetReg), 9));
+				--Receive Data 
+				IF to_integer(stateCycleCount) >= t_cac AND to_integer(stateCycleCount) <= t_cac + to_integer(burstLengthReg) THEN
+					IF readBufferPointer(0) = '1' THEN --Only update read Buffer when pointer is odd as only 16 bit can be read from RAM at a time. 
+						readBufferDataIn <= readTmpReg & SDRAM_DATA;
+						readBufferWriteAddress <= '0' & readBufferPointer(8 DOWNTO 1);
+						readBufferWriteEnable  <= '1';
+					ELSE
+						readTmpReg_nxt <= SDRAM_DATA;
+					END IF;
+
 				END IF;
 
 				--Give the other state machine the signal to start providing the received Data at the output
@@ -504,8 +587,10 @@ BEGIN
 				IF to_integer(refreshCount) = refreshWindowCycles - 1 THEN
 					refreshCount   <= (OTHERS => '0');
 					refreshPending <= True;
-				ELSE
+				ELSIF controllerState /= SDRAM_POWER_UP THEN --Only start counting if RAM has finished powering up.
 					refreshCount <= refreshCount + 1;
+				ELSE
+					refreshCount <= (OTHERS => '0');
 				END IF;
 
 				IF refreshDone = '1' THEN
@@ -539,14 +624,14 @@ BEGIN
 		END IF;
 	END PROCESS;
 	--System State Machines
-	PROCESS (readBufferState, writeBufferState, writeBufferEmpty, writeTurnReg, writeReq, writeBufferWriteCount, dataIn, writeBuffer, writeAddressReg, writeBurstLengthReg, writeByteMaskReg, writeDeviceIndexReg, address, burstLength, byteMask, readDeviceIndexReg, readBufferEmpty, readBuffer, readBufferReadCount, readByteMaskReg, readBurstLengthReg)
+	PROCESS (readBufferState, writeBufferState, writeBufferEmpty, writeTurnReg, writeReq, writeBufferWriteCount, dataIn, writeAddressReg, writeBurstLengthReg, writeByteMaskReg, writeDeviceIndexReg, address, burstLength, byteMask, readDeviceIndexReg, readBufferEmpty, readBufferReadCount, readByteMaskReg, readBurstLengthReg, readBufferDataOut)
 		VARIABLE deviceIndex : INTEGER;
 		VARIABLE nextTurn    : INTEGER;
+		VARIABLE data        : STD_LOGIC_VECTOR(31 DOWNTO 0);
 	BEGIN
 		--default assignments
 		--write registers and signals
 		writeBufferState_nxt       <= writeBufferState;
-		writeBuffer_nxt            <= writeBuffer;
 		writeBufferEmpty_nxt       <= writeBufferEmpty;
 		writeTurnReg_nxt           <= writeTurnReg;
 		writeAddressReg_nxt        <= writeAddressReg;
@@ -555,6 +640,9 @@ BEGIN
 		writeDeviceIndexReg_nxt    <= writeDeviceIndexReg;
 		writeBufferWriteCountReset <= '0';
 		SDRAM_Ready                <= (OTHERS => '0');
+		writeBufferDataIn          <= (OTHERS => '0');
+		writeBufferWriteAddress    <= (OTHERS => '0');
+		writeBufferWriteEnable     <= '0';
 
 		--read registers and signals
 		readBufferState_nxt      <= readBufferState;
@@ -562,6 +650,7 @@ BEGIN
 		readBufferReadCountReset <= '0';
 		dataAvailable            <= (OTHERS => '0');
 		dataOut                  <= (OTHERS => '0');
+		readBufferReadAddress    <= (OTHERS => '0');
 
 		CASE writeBufferState IS
 			WHEN WRITE_BUFFER_IDLE =>
@@ -580,7 +669,7 @@ BEGIN
 								nextTurn := 0;
 							END IF;
 							writeTurnReg_nxt        <= to_unsigned(nextTurn, 3);
-							writeAddressReg_nxt     <= address(deviceIndex * 25 + 24 DOWNTO deviceIndex * 25);
+							writeAddressReg_nxt     <= address(deviceIndex * 24 + 23 DOWNTO deviceIndex * 24) & '0'; --Multiply by 2
 							writeBurstLengthReg_nxt <= unsigned(burstLength(deviceIndex * 9 + 8 DOWNTO deviceIndex * 9));
 							writeByteMaskReg_nxt    <= byteMask(deviceIndex * 4 + 3 DOWNTO deviceIndex * 4);
 							writeDeviceIndexReg_nxt <= to_unsigned(deviceIndex, 3);
@@ -600,8 +689,11 @@ BEGIN
 			WHEN WRITE_BUFFER_RECEIVING =>
 				--Receiving Data
 				deviceIndex := to_integer(writeDeviceIndexReg);
-				writeBuffer_nxt(to_integer(writeBufferWriteCount) * 2)     <= dataIn(deviceIndex * 32 + 31 DOWNTO deviceIndex * 32 + 16);
-				writeBuffer_nxt(to_integer(writeBufferWriteCount) * 2 + 1) <= dataIn(deviceIndex * 32 + 15 DOWNTO deviceIndex * 32);
+				data        := dataIn(deviceIndex * 32 + 31 DOWNTO deviceIndex * 32);
+
+				writeBufferDataIn       <= data;
+				writeBufferWriteAddress <= STD_LOGIC_VECTOR(writeBufferWriteCount);
+				writeBufferWriteEnable  <= '1';
 
 				IF to_integer(writeBufferWriteCount) >= to_integer(writeBurstLengthReg) THEN
 					writeBufferState_nxt <= WRITE_BUFFER_IDLE;
@@ -621,7 +713,8 @@ BEGIN
 				END IF;
 
 			WHEN READ_BUFFER_TRANSMITTING =>
-				dataOut <= readBuffer(to_integer(readBufferReadCount) * 2) & readBuffer(to_integer(readBufferReadCount) * 2 + 1);
+				readBufferReadAddress <= STD_LOGIC_VECTOR(readBufferReadCount + 1);
+				dataOut               <= readBufferDataOut;
 				--Applying Byte Mask
 				FOR i IN 0 TO 3 LOOP
 					IF readByteMaskReg(i) = '0' THEN
@@ -642,40 +735,49 @@ BEGIN
 	END PROCESS;
 	--Update registers that are managed by the system clock
 	PROCESS (sysClk, reset)
+		VARIABLE readBufferEmptyResetShiftRegVariable  : STD_LOGIC_VECTOR(1 DOWNTO 0);
+		VARIABLE writeBufferEmptyResetShiftRegVariable : STD_LOGIC_VECTOR(1 DOWNTO 0);
 	BEGIN
 		IF reset = '1' THEN
-			readBufferState     <= READ_BUFFER_IDLE;
-			writeBufferState    <= WRITE_BUFFER_IDLE;
-			writeBuffer         <= (OTHERS => (OTHERS => '0'));
-			writeAddressReg     <= (OTHERS => '0');
-			writeTurnReg        <= (OTHERS => '0');
-			writeBurstLengthReg <= (OTHERS => '0');
-			writeByteMaskReg    <= (OTHERS => '0');
-			writeDeviceIndexReg <= (OTHERS => '0');
-			writeBufferEmpty    <= True;
-			readBufferEmpty     <= False;
+			readBufferState               <= READ_BUFFER_IDLE;
+			writeBufferState              <= WRITE_BUFFER_IDLE;
+			writeAddressReg               <= (OTHERS => '0');
+			writeTurnReg                  <= (OTHERS => '0');
+			writeBurstLengthReg           <= (OTHERS => '0');
+			writeByteMaskReg              <= (OTHERS => '0');
+			writeDeviceIndexReg           <= (OTHERS => '0');
+			readBufferEmptyResetShiftReg  <= (OTHERS => '0');
+			writeBufferEmptyResetShiftReg <= (OTHERS => '0');
+			writeBufferEmpty              <= True;
+			readBufferEmpty               <= False;
 
 		ELSIF rising_edge(sysClk) THEN
 			IF enable = '1' THEN
 				readBufferState     <= readBufferState_nxt;
 				writeBufferState    <= writeBufferState_nxt;
-				writeBuffer         <= writeBuffer_nxt;
 				writeAddressReg     <= writeAddressReg_nxt;
 				writeTurnReg        <= writeTurnReg_nxt;
 				writeBurstLengthReg <= writeBurstLengthReg_nxt;
 				writeByteMaskReg    <= writeByteMaskReg_nxt;
 				writeDeviceIndexReg <= writeDeviceIndexReg_nxt;
-				IF writeBufferEmptyReset = '1' THEN
+
+				--Detecting rising edges of asynchronous reset signals
+				writeBufferEmptyResetShiftRegVariable := writeBufferEmptyResetShiftReg(0) & writeBufferEmptyReset;
+				IF writeBufferEmptyResetShiftRegVariable = "01" THEN
 					writeBufferEmpty <= True;
 				ELSE
 					writeBufferEmpty <= writeBufferEmpty_nxt;
 				END IF;
+				writeBufferEmptyResetShiftReg <= writeBufferEmptyResetShiftRegVariable;
 
-				IF readBufferEmptyReset = '1' THEN
+				readBufferEmptyResetShiftRegVariable := readBufferEmptyResetShiftReg(0) & readBufferEmptyReset;
+				IF readBufferEmptyResetShiftRegVariable = "01" THEN
 					readBufferEmpty <= False;
 				ELSE
 					readBufferEmpty <= readBufferEmpty_nxt;
 				END IF;
+				readBufferEmptyResetShiftReg <= readBufferEmptyResetShiftRegVariable;
+
 			END IF;
 		END IF;
 	END PROCESS;
@@ -690,13 +792,13 @@ BEGIN
 			byteMaskReg                <= (OTHERS => '0');
 			readTurnReg                <= (OTHERS => '0');
 			bufferOffsetReg            <= (OTHERS => '0');
-			readBuffer                 <= (OTHERS => (OTHERS => '0'));
 			readBurstLengthReg         <= (OTHERS => '0');
 			readByteMaskReg            <= (OTHERS => '0');
 			readDeviceIndexReg         <= (OTHERS => '0');
 			memoryOverflowInterruptReg <= '0';
 			memOperationReg            <= WRITE;
 			burstOverflowReg           <= False;
+			readTmpReg                 <= (OTHERS => '0');
 
 		ELSIF falling_edge(memClk) THEN
 			IF enable = '1' THEN
@@ -711,10 +813,10 @@ BEGIN
 
 				--Read Registers
 				readTurnReg        <= readTurnReg_nxt;
-				readBuffer         <= readBuffer_nxt;
 				readBurstLengthReg <= readBurstLengthReg_nxt;
 				readByteMaskReg    <= readByteMaskReg_nxt;
 				readDeviceIndexReg <= readDeviceIndexReg_nxt;
+				readTmpReg         <= readTmpReg_nxt;
 				--Resetting Interrupt
 				IF interruptReset = '1' THEN
 					memoryOverflowInterruptReg <= '0';

@@ -1,0 +1,381 @@
+#-----------------------------------------------------------
+# Vivado v2024.2 (64-bit)
+# SW Build 5239630 on Fri Nov 08 22:34:34 MST 2024
+# IP Build 5239520 on Sun Nov 10 16:12:51 MST 2024
+# SharedData Build 5239561 on Fri Nov 08 14:39:27 MST 2024
+# Start of session at: Wed Mar 12 14:12:09 2025
+# Process ID         : 114529
+# Current directory  : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1
+# Command line       : vivado -log top.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source top.tcl
+# Log file           : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1/top.vds
+# Journal file       : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1/vivado.jou
+# Running On         : archLaptop
+# Platform           : Arch
+# Operating System   : Arch Linux
+# Processor Detail   : AMD Ryzen 7 7735U with Radeon Graphics
+# CPU Frequency      : 2303.754 MHz
+# CPU Physical cores : 8
+# CPU Logical cores  : 16
+# Host memory        : 15966 MB
+# Swap memory        : 4294 MB
+# Total Virtual      : 20261 MB
+# Available Virtual  : 12527 MB
+#-----------------------------------------------------------
+source top.tcl -notrace
+Command: read_checkpoint -auto_incremental -incremental /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.srcs/utils_1/imports/synth_1/top.dcp
+INFO: [Vivado 12-5825] Read reference checkpoint from /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.srcs/utils_1/imports/synth_1/top.dcp for incremental synthesis
+INFO: [Vivado 12-7989] Please ensure there are no constraint changes
+Command: synth_design -top top -part xc7k70tfbv676-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7k70t'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7k70t'
+INFO: [Designutils 20-5440] No compile time benefit to using incremental synthesis; A full resynthesis will be run
+INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 7 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 114554
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 1740.387 ; gain = 269.855 ; free physical = 5053 ; free virtual = 11100
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'top' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:32]
+	Parameter numConnectedDevices bound to: 1 - type: integer 
+INFO: [Synth 8-3491] module 'SdramController' declared at '/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:11' bound to instance 'sdram_controller' of component 'SdramController' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:148]
+INFO: [Synth 8-638] synthesizing module 'SdramController' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:71]
+	Parameter numConnectedDevices bound to: 1 - type: integer 
+	Parameter memClkPeriod bound to: 7 - type: integer 
+	Parameter sysClkPeriod bound to: 20 - type: integer 
+	Parameter t_cac bound to: 3 - type: integer 
+	Parameter t_rcd bound to: 3 - type: integer 
+	Parameter t_rac bound to: 6 - type: integer 
+	Parameter t_rc bound to: 9 - type: integer 
+	Parameter t_ras bound to: 6 - type: integer 
+	Parameter t_rp bound to: 3 - type: integer 
+	Parameter t_rdd bound to: 2 - type: integer 
+	Parameter t_ccd bound to: 1 - type: integer 
+	Parameter t_dpl bound to: 2 - type: integer 
+	Parameter t_dal bound to: 5 - type: integer 
+	Parameter t_rbd bound to: 3 - type: integer 
+	Parameter t_wbd bound to: 0 - type: integer 
+	Parameter t_rql bound to: 3 - type: integer 
+	Parameter t_wdl bound to: 0 - type: integer 
+	Parameter t_mrd bound to: 2 - type: integer 
+	Parameter inputWordSize bound to: 32 - type: integer 
+	Parameter outputWordSize bound to: 16 - type: integer 
+	Parameter ramSize bound to: 512 - type: integer 
+INFO: [Synth 8-3491] module 'IO_Buffer' declared at '/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/IO_Buffer.vhd:5' bound to instance 'writeBuffer' of component 'IO_Buffer' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:195]
+INFO: [Synth 8-638] synthesizing module 'IO_Buffer' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/IO_Buffer.vhd:24]
+	Parameter inputWordSize bound to: 32 - type: integer 
+	Parameter outputWordSize bound to: 16 - type: integer 
+	Parameter ramSize bound to: 512 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'IO_Buffer' (0#1) [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/IO_Buffer.vhd:24]
+INFO: [Synth 8-226] default block is never used [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:259]
+INFO: [Synth 8-226] default block is never used [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:431]
+INFO: [Synth 8-226] default block is never used [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:618]
+INFO: [Synth 8-226] default block is never used [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:670]
+INFO: [Synth 8-256] done synthesizing module 'SdramController' (0#1) [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/SDRAM_Controller_DE10-Lite.vhd:71]
+INFO: [Synth 8-3491] module 'pllClockGenerator' declared at '/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/pllClockGeneratorAMD.vhd:7' bound to instance 'clock_generator' of component 'pllClockGenerator' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:180]
+INFO: [Synth 8-638] synthesizing module 'pllClockGenerator' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/pllClockGeneratorAMD.vhd:21]
+	Parameter CLKFBOUT_MULT_F bound to: 10.000000 - type: double 
+	Parameter CLKOUT0_DIVIDE_F bound to: 7.000000 - type: double 
+	Parameter CLKIN1_PERIOD bound to: 10.000000 - type: double 
+	Parameter CLKFBOUT_MULT_F bound to: 10.000000 - type: double 
+	Parameter CLKOUT0_DIVIDE_F bound to: 7.000000 - type: double 
+	Parameter CLKIN1_PERIOD bound to: 10.000000 - type: double 
+	Parameter DIVCLK_DIVIDE bound to: 1 - type: integer 
+INFO: [Synth 8-3491] module 'MMCME2_BASE' declared at '/home/jonas/Xilinx/Vivado/2024.2/scripts/rt/data/unisim_comp.v:84708' bound to instance 'mmcm_inst' of component 'MMCME2_BASE' [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/pllClockGeneratorAMD.vhd:45]
+INFO: [Synth 8-6157] synthesizing module 'MMCME2_BASE' [/home/jonas/Xilinx/Vivado/2024.2/scripts/rt/data/unisim_comp.v:84708]
+	Parameter CLKFBOUT_MULT_F bound to: 10.000000 - type: double 
+	Parameter CLKIN1_PERIOD bound to: 10.000000 - type: double 
+	Parameter CLKOUT0_DIVIDE_F bound to: 7.000000 - type: double 
+	Parameter DIVCLK_DIVIDE bound to: 1 - type: integer 
+INFO: [Synth 8-6155] done synthesizing module 'MMCME2_BASE' (0#1) [/home/jonas/Xilinx/Vivado/2024.2/scripts/rt/data/unisim_comp.v:84708]
+INFO: [Synth 8-256] done synthesizing module 'pllClockGenerator' (0#1) [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/pllClockGeneratorAMD.vhd:21]
+INFO: [Synth 8-256] done synthesizing module 'top' (0#1) [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:32]
+WARNING: [Synth 8-6014] Unused sequential element receivedData_reg[3] was removed.  [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:279]
+WARNING: [Synth 8-6014] Unused sequential element receivedData_reg[1] was removed.  [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:279]
+WARNING: [Synth 8-6014] Unused sequential element receivedData_reg[0] was removed.  [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/VHDL Files/Test Files/top.vhd:279]
+WARNING: [Synth 8-7129] Port readAddress[9] in module IO_Buffer is either unconnected or has no load
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 1950.926 ; gain = 480.395 ; free physical = 4842 ; free virtual = 10897
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 1953.895 ; gain = 483.363 ; free physical = 4841 ; free virtual = 10898
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7k70tfbv676-1
+INFO: [Device 21-403] Loading part xc7k70tfbv676-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 1961.898 ; gain = 491.367 ; free physical = 4841 ; free virtual = 10898
+---------------------------------------------------------------------------------
+INFO: [Synth 8-802] inferred FSM for state register 'controllerState_reg' in module 'SdramController'
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'top'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+          sdram_power_up |                              000 |                              000
+              sdram_init |                              001 |                              001
+              sdram_idle |                              010 |                              010
+sdram_recover_from_interrupt |                              011 |                              111
+      sdram_activate_row |                              100 |                              100
+             sdram_write |                              101 |                              110
+              sdram_read |                              110 |                              101
+      sdram_auto_refresh |                              111 |                              011
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'controllerState_reg' using encoding 'sequential' in module 'SdramController'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                    idle |                           000001 |                              000
+      start_transmission |                           000010 |                              001
+                transmit |                           000100 |                              010
+         start_receiving |                           001000 |                              100
+                 receive |                           010000 |                              101
+                    halt |                           100000 |                              011
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'one-hot' in module 'top'
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:16 ; elapsed = 00:00:16 . Memory (MB): peak = 1969.906 ; gain = 499.375 ; free physical = 4899 ; free virtual = 10970
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input   35 Bit       Adders := 4     
+	   3 Input   32 Bit       Adders := 1     
+	   2 Input   32 Bit       Adders := 2     
+	   3 Input   26 Bit       Adders := 1     
+	   2 Input   12 Bit       Adders := 2     
+	   2 Input   11 Bit       Adders := 4     
+	   3 Input   10 Bit       Adders := 1     
+	   2 Input   10 Bit       Adders := 4     
+	   2 Input    9 Bit       Adders := 1     
+	   2 Input    5 Bit       Adders := 2     
+	   2 Input    4 Bit       Adders := 2     
++---Registers : 
+	               32 Bit    Registers := 3     
+	               25 Bit    Registers := 2     
+	               16 Bit    Registers := 1025  
+	               10 Bit    Registers := 5     
+	                9 Bit    Registers := 3     
+	                8 Bit    Registers := 1     
+	                4 Bit    Registers := 3     
+	                3 Bit    Registers := 4     
+	                1 Bit    Registers := 9     
++---Multipliers : 
+	               5x32  Multipliers := 2     
+	               4x32  Multipliers := 1     
+	               6x32  Multipliers := 2     
++---RAMs : 
+	              16K Bit	(512 X 32 bit)          RAMs := 1     
++---Muxes : 
+	   2 Input   32 Bit        Muxes := 4     
+	   2 Input   25 Bit        Muxes := 2     
+	   8 Input   19 Bit        Muxes := 1     
+	   3 Input   18 Bit        Muxes := 2     
+	   2 Input   18 Bit        Muxes := 1     
+	   8 Input   16 Bit        Muxes := 1     
+	   2 Input   16 Bit        Muxes := 1     
+	   6 Input   11 Bit        Muxes := 1     
+	   2 Input   10 Bit        Muxes := 8     
+	   8 Input   10 Bit        Muxes := 1     
+	   2 Input    9 Bit        Muxes := 3     
+	   2 Input    8 Bit        Muxes := 4     
+	   2 Input    4 Bit        Muxes := 1     
+	   6 Input    4 Bit        Muxes := 1     
+	   8 Input    3 Bit        Muxes := 1     
+	   2 Input    3 Bit        Muxes := 6     
+	   2 Input    2 Bit        Muxes := 2     
+	   8 Input    2 Bit        Muxes := 1     
+	   6 Input    2 Bit        Muxes := 1     
+	   2 Input    1 Bit        Muxes := 24    
+	   8 Input    1 Bit        Muxes := 1036  
+	   6 Input    1 Bit        Muxes := 4     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 240 (col length:80)
+BRAMs: 270 (col length: RAMB18 80 RAMB36 40)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-3917] design top has port SDRAM_CLK_EN driven by constant 1
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:24 ; elapsed = 00:00:45 . Memory (MB): peak = 2085.887 ; gain = 615.355 ; free physical = 278 ; free virtual = 5300
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Preliminary Mapping Report (see note below)
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name          | RTL Object                   | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|SdramController__GB4 | writeBuffer/IO_BufferRAM_reg | 512 x 32(NO_CHANGE)    | W |   | 512 x 32(WRITE_FIRST)  |   | R | Port A and B     | 1      | 0      | 
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+Note: The table above is a preliminary report that shows the Block RAMs at the current stage of the synthesis flow. Some Block RAMs may be reimplemented as non Block RAM primitives later in the synthesis flow. Multiple instantiated Block RAMs are reported only once. 
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:51 ; elapsed = 00:00:46 . Memory (MB): peak = 2085.891 ; gain = 615.359 ; free physical = 2132 ; free virtual = 7177
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Final Mapping Report
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name          | RTL Object                   | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|SdramController__GB4 | writeBuffer/IO_BufferRAM_reg | 512 x 32(NO_CHANGE)    | W |   | 512 x 32(WRITE_FIRST)  |   | R | Port A and B     | 1      | 0      | 
++---------------------+------------------------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+INFO: [Synth 8-7052] The timing for the instance sdram_controller/writeBuffer/IO_BufferRAM_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:53 ; elapsed = 00:00:48 . Memory (MB): peak = 2085.891 ; gain = 615.359 ; free physical = 2054 ; free virtual = 7104
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2176.785 ; gain = 706.254 ; free physical = 1374 ; free virtual = 6425
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2176.785 ; gain = 706.254 ; free physical = 1374 ; free virtual = 6425
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2176.785 ; gain = 706.254 ; free physical = 1374 ; free virtual = 6426
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2176.785 ; gain = 706.254 ; free physical = 1374 ; free virtual = 6426
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2182.723 ; gain = 712.191 ; free physical = 1366 ; free virtual = 6418
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2182.723 ; gain = 712.191 ; free physical = 1366 ; free virtual = 6418
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+------------+------+
+|      |Cell        |Count |
++------+------------+------+
+|1     |BUFG        |     2|
+|2     |CARRY4      |    72|
+|3     |LUT1        |    10|
+|4     |LUT2        |   198|
+|5     |LUT3        |    98|
+|6     |LUT4        |   171|
+|7     |LUT5        |   414|
+|8     |LUT6        |  1470|
+|9     |MMCME2_BASE |     1|
+|10    |MUXF7       |   544|
+|11    |MUXF8       |   272|
+|12    |RAMB18E1    |     1|
+|13    |FDCE        |  4290|
+|14    |FDPE        |     4|
+|15    |IBUF        |     3|
+|16    |IOBUF       |     8|
+|17    |OBUF        |    31|
+|18    |OBUFT       |     8|
++------+------------+------+
+
+Report Instance Areas: 
++------+-------------------+------------------+------+
+|      |Instance           |Module            |Cells |
++------+-------------------+------------------+------+
+|1     |top                |                  |  7597|
+|2     |  clock_generator  |pllClockGenerator |     6|
+|3     |  sdram_controller |SdramController   |  7497|
+|4     |    writeBuffer    |IO_Buffer         |    61|
++------+-------------------+------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:56 ; elapsed = 00:00:51 . Memory (MB): peak = 2182.723 ; gain = 712.191 ; free physical = 1366 ; free virtual = 6418
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 6 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:56 ; elapsed = 00:00:56 . Memory (MB): peak = 2186.637 ; gain = 716.105 ; free physical = 5609 ; free virtual = 10664
+Synthesis Optimization Complete : Time (s): cpu = 00:00:56 ; elapsed = 00:00:56 . Memory (MB): peak = 2186.637 ; gain = 716.105 ; free physical = 5614 ; free virtual = 10662
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.04 . Memory (MB): peak = 2196.598 ; gain = 0.000 ; free physical = 5573 ; free virtual = 10632
+INFO: [Netlist 29-17] Analyzing 898 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+WARNING: [Netlist 29-101] Netlist 'top' is not ideal for floorplanning, since the cellview 'SdramController' contains a large number of primitives.  Please consider enabling hierarchy in synthesis if you want to do floorplanning.
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2335.152 ; gain = 0.000 ; free physical = 5507 ; free virtual = 10569
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 9 instances were transformed.
+  IOBUF => IOBUF (IBUF, OBUFT): 8 instances
+  MMCME2_BASE => MMCME2_ADV: 1 instance 
+
+Synth Design complete | Checksum: 3a0fd979
+INFO: [Common 17-83] Releasing license: Synthesis
+39 Infos, 7 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:59 ; elapsed = 00:00:59 . Memory (MB): peak = 2335.152 ; gain = 864.629 ; free physical = 5507 ; free virtual = 10569
+INFO: [Common 17-2834] synth_design peak Physical Memory [PSS] (MB): overall = 6822.089; main = 1601.813; forked = 5661.382
+INFO: [Common 17-2834] synth_design peak Virtual Memory [VSS] (MB): overall = 13890.094; main = 2335.156; forked = 11808.113
+Write ShapeDB Complete: Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2359.164 ; gain = 0.000 ; free physical = 5507 ; free virtual = 10569
+INFO: [Common 17-1381] The checkpoint '/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1/top.dcp' has been generated.
+INFO: [Vivado 12-24828] Executing command : report_utilization -file top_utilization_synth.rpt -pb top_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Wed Mar 12 14:13:12 2025...

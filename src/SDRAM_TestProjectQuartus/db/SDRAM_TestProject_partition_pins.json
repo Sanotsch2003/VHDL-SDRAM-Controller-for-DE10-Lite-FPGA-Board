@@ -16,6 +16,10 @@
 					"strict" : false
 				},
 				{
+					"name" : "SDRAM_ADDR[3]",
+					"strict" : false
+				},
+				{
 					"name" : "SDRAM_ADDR[4]",
 					"strict" : false
 				},

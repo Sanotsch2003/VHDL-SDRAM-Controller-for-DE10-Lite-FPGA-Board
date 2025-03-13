@@ -35,7 +35,7 @@ ARCHITECTURE Behavioral OF top IS
             numConnectedDevices : INTEGER := 1; --max: 8
 
             --unit: nanoseconds
-            memClkPeriod : INTEGER := 7;
+            memClkPeriod : INTEGER := 14;
             sysClkPeriod : INTEGER := 20;
 
             --unit: cycles
@@ -78,7 +78,7 @@ ARCHITECTURE Behavioral OF top IS
             burstLength   : IN STD_LOGIC_VECTOR(numConnectedDevices * 9 - 1 DOWNTO 0);
             readReq       : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
             writeReq      : IN STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
-            address       : IN STD_LOGIC_VECTOR(numConnectedDevices * 25 - 1 DOWNTO 0);
+            address       : IN STD_LOGIC_VECTOR(numConnectedDevices * 24 - 1 DOWNTO 0);
             dataIn        : IN STD_LOGIC_VECTOR(numConnectedDevices * 32 - 1 DOWNTO 0);
             dataOut       : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             byteMask      : IN STD_LOGIC_VECTOR(numConnectedDevices * 4 - 1 DOWNTO 0);
@@ -94,12 +94,12 @@ ARCHITECTURE Behavioral OF top IS
         GENERIC (
             CLKFBOUT_MULT_F  : real := 10.0; -- Feedback multiplier
             CLKOUT0_DIVIDE_F : real := 7.0;  -- Divide factor
-            CLKIN1_PERIOD    : real := 10.0  -- Input clock period (100 MHz)
+            CLKIN1_PERIOD    : real := 20.0  -- Input clock period (50 MHz)
         );
         PORT (
-            clk_in  : IN STD_LOGIC;  -- 100 MHz input clock
+            clk_in  : IN STD_LOGIC;  -- 50 MHz input clock
             reset   : IN STD_LOGIC;  -- Reset signal
-            clk_out : OUT STD_LOGIC; -- 50 MHz output clock
+            clk_out : OUT STD_LOGIC; -- 142 MHz output clock
             locked  : OUT STD_LOGIC  -- Locked signal
         );
     END COMPONENT;
@@ -107,7 +107,7 @@ ARCHITECTURE Behavioral OF top IS
     SIGNAL burstLength             : STD_LOGIC_VECTOR(numConnectedDevices * 9 - 1 DOWNTO 0);
     SIGNAL readReq                 : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
     SIGNAL writeReq                : STD_LOGIC_VECTOR(numConnectedDevices - 1 DOWNTO 0);
-    SIGNAL address                 : STD_LOGIC_VECTOR(numConnectedDevices * 25 - 1 DOWNTO 0);
+    SIGNAL address                 : STD_LOGIC_VECTOR(numConnectedDevices * 24 - 1 DOWNTO 0);
     SIGNAL dataToRAM               : STD_LOGIC_VECTOR(numConnectedDevices * 32 - 1 DOWNTO 0);
     SIGNAL dataFromRAM             : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL byteMask                : STD_LOGIC_VECTOR(numConnectedDevices * 4 - 1 DOWNTO 0);
@@ -127,11 +127,13 @@ ARCHITECTURE Behavioral OF top IS
     SIGNAL locked   : STD_LOGIC;
     SIGNAL memClk   : STD_LOGIC;
 
-    TYPE stateType IS (IDLE, START_TRANSMISSION, TRANSMIT, HALT, START_RECEIVING, RECEIVE);
+    TYPE stateType IS (IDLE, START_TRANSMISSION, TRANSMIT, HALT, START_RECEIVING, RECEIVE, ERROR);
     SIGNAL state, state_nxt : stateType;
 
-    CONSTANT c_BURST_LENGTH     : INTEGER := 3;
-    CONSTANT c_STARTING_ADDRESS : INTEGER := 0;
+    CONSTANT c_WRITE_BURST_LENGTH : INTEGER := 64;
+    CONSTANT c_WRITE_ADDRESS      : INTEGER := 5;
+    CONSTANT c_READ_BURST_LENGTH  : INTEGER := 0;
+    CONSTANT c_READ_ADDRESS       : INTEGER := 10;
 
     TYPE std_logic_vector_array IS ARRAY (NATURAL RANGE <>) OF STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL receivedData, receivedData_nxt : std_logic_vector_array(3 DOWNTO 0);
@@ -206,8 +208,8 @@ BEGIN
 
             WHEN START_TRANSMISSION =>
                 writeReq    <= "1";
-                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_BURST_LENGTH, 9));
-                address     <= STD_LOGIC_VECTOR(to_unsigned(c_STARTING_ADDRESS, 25));
+                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_WRITE_BURST_LENGTH, 9));
+                address     <= STD_LOGIC_VECTOR(to_unsigned(c_WRITE_ADDRESS, 24));
                 byteMask    <= "1111";
                 IF SDRAM_Ready = "1" THEN
                     state_nxt          <= TRANSMIT;
@@ -215,16 +217,15 @@ BEGIN
                 END IF;
 
             WHEN TRANSMIT =>
-                IF transmitCount >= c_BURST_LENGTH THEN
+                IF transmitCount >= c_WRITE_BURST_LENGTH THEN
                     state_nxt <= START_RECEIVING;
                 END IF;
-                dataToRam <= STD_LOGIC_VECTOR(to_unsigned(to_integer(transmitCount) + 3, 32));
-                --dataToRam <= "00000000000000000000000011110000";
+                dataToRam(31 DOWNTO 0) <= STD_LOGIC_VECTOR(to_unsigned(to_integer(transmitCount), 32));
 
             WHEN START_RECEIVING =>
                 readReq     <= "1";
-                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_BURST_LENGTH, 9));
-                address     <= STD_LOGIC_VECTOR(to_unsigned(c_STARTING_ADDRESS, 25));
+                burstLength <= STD_LOGIC_VECTOR(to_unsigned(c_READ_BURST_LENGTH, 9));
+                address     <= STD_LOGIC_VECTOR(to_unsigned(c_READ_ADDRESS, 24));
                 byteMask    <= "1111";
 
                 IF dataAvailable = "1" THEN
@@ -233,13 +234,23 @@ BEGIN
                 END IF;
 
             WHEN RECEIVE =>
-                receivedData_nxt(to_integer(receiveCount)) <= dataFromRAM;
-                IF to_integer(receiveCount) = c_BURST_LENGTH THEN
-                    state_nxt <= HALT;
-                END IF;
+                --                IF to_integer(receiveCount) = c_READ_BURST_LENGTH THEN
+                --                    state_nxt <= ERROR;
+                --                END IF;
+                --                IF to_integer(receiveCount) >= c_READ_BURST_LENGTH THEN
+                --                    state_nxt <= HALT;
+                --                END IF;
+                state_nxt   <= HALT;
+                LED_Reg_nxt <= dataFromRam(7 DOWNTO 0);
+                --receivedData_nxt(to_integer(receiveCount)) <= dataFromRAM;
+
+            WHEN ERROR =>
+                LED_REG_nxt <= "10101010";
 
             WHEN HALT =>
-                LED_REG_nxt <= receivedData(2)(7 DOWNTO 0);
+                NULL;
+                --LED_REG_nxt <= "11111111";
+                --LED_REG_nxt <= receivedData(0)(7 downto 0);
                 --FOR i IN 0 TO 3 LOOP
                 --IF receivedData(i) /= x"00000000" THEN
                 --LED_Reg_nxt <= x"55";

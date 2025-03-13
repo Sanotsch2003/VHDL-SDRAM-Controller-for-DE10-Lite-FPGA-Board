@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2024.2 (64-bit)
+# SW Build 5239630 on Fri Nov 08 22:34:34 MST 2024
+# IP Build 5239520 on Sun Nov 10 16:12:51 MST 2024
+# SharedData Build 5239561 on Fri Nov 08 14:39:27 MST 2024
+# Start of session at: Wed Mar 12 14:12:09 2025
+# Process ID         : 114529
+# Current directory  : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1
+# Command line       : vivado -log top.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source top.tcl
+# Log file           : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1/top.vds
+# Journal file       : /home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.runs/synth_1/vivado.jou
+# Running On         : archLaptop
+# Platform           : Arch
+# Operating System   : Arch Linux
+# Processor Detail   : AMD Ryzen 7 7735U with Radeon Graphics
+# CPU Frequency      : 2303.754 MHz
+# CPU Physical cores : 8
+# CPU Logical cores  : 16
+# Host memory        : 15966 MB
+# Swap memory        : 4294 MB
+# Total Virtual      : 20261 MB
+# Available Virtual  : 12527 MB
+#-----------------------------------------------------------
+source top.tcl -notrace

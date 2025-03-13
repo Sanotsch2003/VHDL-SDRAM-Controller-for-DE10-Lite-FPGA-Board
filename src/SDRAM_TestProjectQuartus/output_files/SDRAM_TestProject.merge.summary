@@ -1,0 +1,16 @@
+Partition Merge Status : Successful - Thu Mar 13 17:26:29 2025
+Quartus Prime Version : 23.1std.1 Build 993 05/14/2024 SC Lite Edition
+Revision Name : SDRAM_TestProject
+Top-level Entity Name : top
+Family : MAX 10
+Total logic elements : 334
+    Total combinational functions : 326
+    Dedicated logic registers : 114
+Total registers : 114
+Total pins : 50
+Total virtual pins : 0
+Total memory bits : 9,216
+Embedded Multiplier 9-bit elements : 0
+Total PLLs : 1
+UFM blocks : 0
+ADC blocks : 0

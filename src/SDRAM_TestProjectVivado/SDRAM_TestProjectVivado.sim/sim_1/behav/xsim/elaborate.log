@@ -4,5 +4,7 @@ Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 Running: /home/jonas/Xilinx/Vivado/2024.2/bin/unwrapped/lnx64.o/xelab --incr --debug typical --relax --mt 8 -L xil_defaultlib -L secureip --snapshot tb_SdramController_behav xil_defaultlib.tb_SdramController -log elaborate.log 
 Using 8 slave threads.
 Starting static elaboration
+WARNING: [VRFC 10-2065] size mismatch between entity and component port [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.srcs/sim_1/new/SDRAM_ControllerTB.vhd:53]
+WARNING: [VRFC 10-2065] size mismatch between entity and component port [/home/jonas/git/VHDL-SDRAM-Controller-for-DE10-Lite-FPGA-Board/src/SDRAM_TestProjectVivado/SDRAM_TestProjectVivado.srcs/sim_1/new/SDRAM_ControllerTB.vhd:53]
 Completed static elaboration
 INFO: [XSIM 43-4323] No Change in HDL. Linking previously generated obj files to create kernel

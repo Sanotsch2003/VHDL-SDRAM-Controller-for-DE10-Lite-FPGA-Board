@@ -1,12 +1,13 @@
 
 State Machine - |top|state
-Name state.RECEIVE state.START_RECEIVING state.HALT state.TRANSMIT state.START_TRANSMISSION state.IDLE 
-state.IDLE 0 0 0 0 0 0 
-state.START_TRANSMISSION 0 0 0 0 1 1 
-state.TRANSMIT 0 0 0 1 0 1 
-state.HALT 0 0 1 0 0 1 
-state.START_RECEIVING 0 1 0 0 0 1 
-state.RECEIVE 1 0 0 0 0 1 
+Name state.ERROR state.RECEIVE state.START_RECEIVING state.HALT state.TRANSMIT state.START_TRANSMISSION state.IDLE 
+state.IDLE 0 0 0 0 0 0 0 
+state.START_TRANSMISSION 0 0 0 0 0 1 1 
+state.TRANSMIT 0 0 0 0 1 0 1 
+state.HALT 0 0 0 1 0 0 1 
+state.START_RECEIVING 0 0 1 0 0 0 1 
+state.RECEIVE 0 1 0 0 0 0 1 
+state.ERROR 1 0 0 0 0 0 1 
 
 State Machine - |top|SdramController:sdram_controller|controllerState
 Name controllerState.SDRAM_RECOVER_FROM_INTERRUPT controllerState.SDRAM_WRITE controllerState.SDRAM_READ controllerState.SDRAM_ACTIVATE_ROW controllerState.SDRAM_AUTO_REFRESH controllerState.SDRAM_IDLE controllerState.SDRAM_INIT controllerState.SDRAM_POWER_UP 
